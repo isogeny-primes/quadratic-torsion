@@ -1,0 +1,134 @@
+> _<x>:=PolynomialRing(Rationals());
+> for d in positive_rank do
+for>   C:=HyperellipticCurve(d*x*(x^2+1)*(x^2+2*x-1));
+for>   J := Jacobian(C);
+for>   MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(J: RankOnly \
+:= true);
+for>   inv := Invariants(MW);
+for>   print d, inv, bound, flag1, flag2;
+for> end for;
+10 [ 2, 2, 0, 0 ]
+2 true false
+15 [ 2, 2, 0, 0 ]
+2 true false
+41 [ 2, 2, 0, 0 ]
+2 true false
+51 [ 2, 2, 0, 0 ]
+2 true false
+70 [ 2, 2, 0, 0 ]
+2 true false
+79 [ 2, 2, 0, 0 ]
+2 true false
+93 [ 2, 2, 0, 0 ]
+2 true false
+94 [ 2, 2, 0, 0 ]
+2 true false
+105 [ 2, 2, 0, 0 ]
+2 true false
+^C
+[Interrupted]
+> _<x>:=PolynomialRing(Rationals());
+> for d in positive_rank do
+for>   C:=HyperellipticCurve(d*x*(x^2+1)*(x^2+2*x-1));
+for>   J := Jacobian(C);
+for>   MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(J: RankOnly \
+:= true);
+for>   inv := Invariants(MW);
+for>   print d,bound, flag1, flag2, inv;
+for> end for;
+10 2 true false [ 2, 2, 0, 0 ]
+15 2 true false [ 2, 2, 0, 0 ]
+41 2 true false [ 2, 2, 0, 0 ]
+51 2 true false [ 2, 2, 0, 0 ]
+70 2 true false [ 2, 2, 0, 0 ]
+^C
+[Interrupted]
+> _<x>:=PolynomialRing(Rationals());
+> for d in positive_rank do
+for>   C:=HyperellipticCurve(d*x*(x^2+1)*(x^2+2*x-1));
+for>   J := Jacobian(C);
+for>   b1, b2 := RankBounds(J: Bound:=10);
+for>   if b2 eq 2 then
+for|if>     print d, b1, b2;
+for|if>     continue;
+for|if>   end if;
+for>   MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(J: RankOnly \
+:= true);
+for>   inv := Invariants(MW);
+for>   print d,bound, flag1, flag2, inv;
+for> end for;
+
+>>   b1, b2 := RankBounds(J: Bound:=10);
+                         ^
+Runtime error in 'RankBounds': Parameter 'Bound' is not defined for this
+function
+
+> _<x>:=PolynomialRing(Rationals());
+> for d in positive_rank do
+for>   C:=HyperellipticCurve(d*x*(x^2+1)*(x^2+2*x-1));
+for>   J := Jacobian(C);
+for>   b1, b2 := RankBounds(J);
+for>   if b2 eq 2 then
+for|if>     print d, b1, b2;
+for|if>     continue;
+for|if>   end if;
+for>   MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(J: RankOnly \
+:= true);
+for>   inv := Invariants(MW);
+for>   print d,bound, flag1, flag2, inv;
+for> end for;
+10 2 2
+15 2 2
+41 0 2
+51 0 2
+70 0 2
+79 0 2
+93 0 2
+94 0 2
+105 0 2
+141 0 2
+143 0 2
+159 0 2
+182 0 2
+187 0 2
+205 0 2
+217 1 2
+222 0 2
+246 0 2
+274 0 2
+303 0 2
+310 4 false false [ 2, 2, 0, 0 ]
+313 0 2
+319 0 2
+345 0 2
+366 0 2
+370 0 2
+391 4 false false [ 2, 2, 0, 0 ]
+394 0 2
+395 0 2
+406 0 2
+409 0 2
+411 0 2
+415 0 2
+435 4 false false [ 2, 2, 0, 0 ]
+442 0 2
+510 0 2
+535 0 2
+542 0 2
+546 0 2
+598 0 2
+609 0 2
+634 0 2
+671 0 2
+679 4 true false [ 2, 2, 0, 0, 0, 0 ]
+697 0 2
+751 0 2
+761 0 2
+782 4 false false [ 2, 2, 0, 0 ]
+794 0 2
+809 0 2
+889 0 2
+939 0 2
+949 0 2
+959 0 2
+969 0 2

@@ -1,0 +1,2754 @@
+Last login: Sun Aug 20 15:54:23 on ttys002
+
+The default interactive shell is now zsh.
+To update your account to use zsh, please run `chsh -s /bin/zsh`.
+For more details, please visit https://support.apple.com/kb/HT208050.
+Maartens-MacBook-Pro:~ mderickx$ magma
+Magma V2.26-10    Sun Aug 20 2023 16:03:20 on Maartens-MacBook-Pro [Seed =
+3932984185]
+
++-------------------------------------------------------------------+
+|       This copy of Magma has been made available through a        |
+|                   generous initiative of the                      |
+|                                                                   |
+|                         Simons Foundation                         |
+|                                                                   |
+| covering U.S. Colleges, Universities, Nonprofit Research entities,|
+|               and their students, faculty, and staff              |
++-------------------------------------------------------------------+
+
+Type ? for help.  Type <Ctrl>-D to quit.
+> QQ:=Rationals();
+> Qx<x> := PolynomialRing(QQ);
+> P1:=ProjectiveSpace(QQ,1);
+>
+> function Zip(a, b)
+function>   //similar to pythons zip function
+function>   assert #a eq #b;
+function>   n := #a;
+function>   return [<a[i],b[i]> : i in [1..n]];
+function> end function;
+>
+> function createHktoA(AtoHk, expvecs, factorbase)
+function>   A := Domain(AtoHk);
+function>   A2 := Parent(factorbase[1]);
+function>   phi := hom< A2 -> A | A.1 >;
+function>   Hk := Domain(expvecs);
+function>   HktoA := map< Hk -> A | h :-> phi(&*[ef[2]^ef[1] : ef in Zip(Eltse\
+q(expvecs(h)),factorbase)])>;
+function>   return HktoA;
+function> end function;
+>
+>
+>
+>
+> function EllipticChabauty(C, g, hk, HktoA)
+function>   assert BaseRing(C) eq QQ;
+function>   assert Degree(g) in [3,4];
+function>   success := true;
+function>   points := {@ @};
+function>   CtoP1 := map< C -> P1 | [C.1,C.3] >;
+function>   K := BaseRing(g);
+function>   A := Codomain(HktoA);
+function>   f := ChangeRing(Modulus(A), QQ);
+function>   L := quo< Parent(g) | g>;
+function>   assert Evaluate(f, L.1) eq 0;
+function>   AtoL := hom< A -> L | L.1>;
+function>
+function>   gamma := Norm(AtoL(HktoA(hk)));
+function>
+function>   for p in PrimeDivisors(Numerator(Norm(gamma))) do
+function|for>     while IsIntegral(gamma/p^2) do
+function|for|while>       gamma := gamma/p^2;
+function|for|while>     end while;
+function|for>   end for;
+function>   print "gamma", gamma;
+function>
+function>   E := HyperellipticCurve(gamma*g);
+function>   EtoP1:=map<E->P1|[E.1,E.3]>;
+function>   iselliptic, E1raw, EtoE1raw, E1rawtoE := IsEllipticCurve(E);
+function>   if not iselliptic then
+function|if>     print "finding points";
+function|if>     time Epoints := Points(E : Bound:=100);
+function|if>     //print #Epoints;
+function|if>     if #Epoints eq 0 then
+function|if|if>       success := false;
+function|if|if>       print "no points found";
+function|if|if>       return success, points;
+function|if|if>     end if;
+function|if>     iselliptic := true;
+function|if>     P0 := Setseq(Epoints)[1];
+function|if>     E1raw,EtoE1raw:=EllipticCurve(E,P0);
+function|if>     E1rawtoE := Inverse(EtoE1raw);
+function|if>   end if;
+function>
+function>   //todo make everything work with a minimal model if we can find on\
+e
+function>   //this will make computations much faster
+function>   E1 := MinimalModel(E1raw);
+function>   print Factorization(Integers() ! Norm(Discriminant(E1raw)/Discrimi\
+nant(E1)));
+function>   time MW1, MW1toE1set, flag1, flag2 := MordellWeilGroup(E1);
+function>   success := success and flag1 and flag2;
+function>   if not success then;
+function|if>     print hk, g, flag1, flag2;
+function|if>     return success, <"mw failed", flag1, flag2>;
+function|if>   end if;
+function>   MW1toE1 := map<MW1 -> E1 | x :-> MW1toE1set(x)>;
+function>   //print Invariants(MW1), flag1, flag2;
+function>   E1toE1raw := Isomorphism(E1,E1raw);
+function>   //E1rawtoE1 := Inverse(E1toE1raw);
+function>   E1toE := E1toE1raw*E1rawtoE;
+function>   E1toP1 := Expand(E1toE1raw*E1rawtoE*EtoP1);
+function>
+function>   if TorsionFreeRank(MW1) ge Degree(K) then
+function|if>     print "rank", TorsionFreeRank(MW1);
+function|if>     success := false;
+function|if>     return success, [*MW1, MW1toE1, E1, E1toP1*];
+function|if>   end if;
+function>   pointset := Chabauty(MW1toE1, E1toP1);
+function>
+function>
+function>   for t in pointset do
+function|for>     //print Parent(t),t;
+function|for>     P := E1toE(MW1toE1(t));
+function|for>     xP := EtoP1(P);
+function|for>     xP := P1(QQ) ! xP;
+function|for>     new_points := RationalPoints( xP@@CtoP1 );
+function|for>     //print t, xP, RationalPoints( xP@@CtoP1 );
+function|for>     points := points join new_points;
+function|for>   end for;
+function>   return success, points;
+function> end function;
+>
+>
+>
+> f1 := -x;
+> f2 := x^2+1;
+> f3 := x^2 - 2*x - 1;
+> f := f1*f2*f3;
+>
+> g1 := -x;
+> g2 := x^2+1;
+> g3 := -x^2 - 2*x + 1;
+> g := g1*g2*g3;
+> //f := 2*x^6+x^4+3*x^2-2;
+> failed_list := [];
+> success_list := [];
+> extra_point_list := [* *];
+> positive_rank := [ 10, 15, 41, 51, 70, 79, 93, 94, 105, 141, 143, 159, 182, \
+187, 205, 217, 222,
+> 246, 274, 303, 310, 313, 319, 345, 366, 370, 391, 394, 395, 406, 409, 411, 4\
+15,
+> 435, 442, 510, 535, 542, 546, 598, 609, 634, 671, 679, 697, 751, 761, 782, 7\
+94,
+> 809, 889, 939, 949, 959, 969 ];
+> for N in positive_rank do
+for>   print(Seqset(failed_list));
+for>   print "=============================== doing:", N, " ==================\
+====";
+for>
+for>   if not IsSquarefree(N) then continue; end if;
+for>
+for>   C := HyperellipticCurve(N*f);
+for>   C1 := HyperellipticCurve(N*g);
+for>   time Hk , AtoHk, expvecs, factorbase := TwoCoverDescent(C: PrimeBound:=\
+30, Raw:=true);
+for>   HktoA := createHktoA(AtoHk, expvecs, factorbase);
+for>
+for>   K2 := NumberField(f2);
+for>   f2a := Factorization(ChangeRing(f2, K2))[1][1];
+for>   f2E := f3*f2a;
+for>   g2a := Factorization(ChangeRing(g2, K2))[1][1];
+for>   g2E := g3*g2a;
+for>
+for>   K3 := NumberField(f3);
+for>   f3a := Factorization(ChangeRing(f3, K3))[1][1];
+for>   f3E := f2*f3a;
+for>   g3a := Factorization(ChangeRing(g3, K3))[1][1];
+for>   g3E := g2*g3a;
+for>
+for>   //print "#Hk:", #Hk;
+for>   Hk := Setseq(Hk);
+for>   points := {@ @};
+for>   for i in [1..#Hk] do
+for|for>     hk := Hk[i];
+for|for>     //print "doing hk", i, hk;
+for|for>     assert AtoHk(HktoA(hk)) eq hk;
+for|for>     success := false;
+for|for>     for fE in [* f3E, f2E, x*f3E, x*f2E *] do
+for|for|for>       success, new_points := EllipticChabauty(C, fE, hk, HktoA);
+for|for|for>       print "chabauty result", success, new_points;
+for|for|for>       if success then
+for|for|for|if>         points := points join new_points;
+for|for|for|if>         break;
+for|for|for|if>       end if;
+for|for|for>     end for;
+for|for>     if not success then
+for|for|if>       print "=============================== failed ==============\
+========";
+for|for|if>       print N, hk;
+for|for|if>       Append(~failed_list,N);
+for|for|if>     end if;
+for|for>   end for;
+for>   print "points for N:", N, points;
+for>   if success then
+for|if>     Append(~success_list, N);
+for|if>     if #points gt 2 then
+for|if|if>       Append(~extra_point_list, <N, points>);
+for|if|if>       print "====================== extra points!!! ===============\
+=====";
+for|if|if>     end if;
+for|if>   end if;
+for> end for;
+{}
+=============================== doing: 10  ======================
+Time: 0.410
+gamma -K.1 + 2
+[]
+Time: 0.800
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -5*K.1 + 10
+[]
+Time: 1.340
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 +
+        117)*x + (-150*K3.1 + 387) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 + 117)*x + (-150*K3.1
+        + 387) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 + 117)*x
+    + (-150*K3.1 + 387) over K3 to Prj: P1
+    with equations :
+    $.1 - 2*$.3
+    (-5*K3.1 + 10)*$.3
+*]
+gamma -K.1 + 2
+[]
+Time: 2.600
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (10*K2.1 +
+        2)*x + (32*K2.1 + 8) over K2 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (10*K2.1 + 2)*x + (32*K2.1 +
+        8) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (10*K2.1 + 2)*x
+    + (32*K2.1 + 8) over K2 to Prj: P1
+    with equations :
+    $.1 + 3*$.3
+    (-K2.1 + 2)*$.3
+*]
+gamma -10*K.1 + 20
+finding points
+Time: 0.120
+[ <2, 12> ]
+Time: 0.650
+chabauty result true {@ (0 : 0 : 1), (2 : -10 : 1), (2 : 10 : 1) @}
+gamma -5
+[]
+Time: 0.600
+chabauty result true {@ (1 : 0 : 0), (-1/2 : -5/4 : 1), (-1/2 : 5/4 : 1) @}
+gamma -5
+[]
+Time: 0.720[r]
+chabauty result true {@ (1 : 0 : 0), (-1/2 : -5/4 : 1), (-1/2 : 5/4 : 1) @}
+points for N: 10 {@ (1 : 0 : 0), (0 : 0 : 1), (2 : -10 : 1), (2 : 10 : 1), (-1/2
+: -5/4 : 1), (-1/2 : 5/4 : 1) @}
+====================== extra points!!! ====================
+{}
+=============================== doing: 15  ======================
+Time: 0.350
+gamma -5*K.1 + 10
+[]
+Time: 1.330
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 +
+        117)*x + (-150*K3.1 + 387) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 + 117)*x + (-150*K3.1
+        + 387) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (-50*K3.1 + 117)*x
+    + (-150*K3.1 + 387) over K3 to Prj: P1
+    with equations :
+    $.1 - 2*$.3
+    (-5*K3.1 + 10)*$.3
+*]
+gamma -5*K.1
+[]
+Time: 4.000
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (4*K2.1 - 2)*x^2 +
+        (-22*K2.1 + 46)*x + (-108*K2.1 - 156) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (4*K2.1 - 2)*x^2 + (-22*K2.1 + 46)*x +
+    (-108*K2.1 - 156) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (4*K2.1 - 2)*x^2 +
+        (-22*K2.1 + 46)*x + (-108*K2.1 - 156) over K2 to Prj: P1
+    with equations :
+    $.1 + (-2*K2.1 + 1)*$.3
+    -5*K2.1*$.3
+*]
+gamma -3*K.1 + 6
+finding points
+Time: 0.120
+[]
+Time: 0.580
+chabauty result true {@ (0 : 0 : 1), (12/5 : -78/25 : 1), (12/5 : 78/25 : 1) @}
+gamma -3
+[]
+Time: 0.650
+chabauty result true {@ (1 : 0 : 0), (-5/12 : -65/288 : 1), (-5/12 : 65/288 : 1)
+@}
+gamma -15
+[]
+Time: 0.300
+chabauty result true {@ @}
+gamma -K.1 + 2
+[]
+Time: 0.480
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 15 {@ (0 : 0 : 1), (12/5 : -78/25 : 1), (12/5 : 78/25 : 1), (1 : 0
+: 0), (-5/12 : -65/288 : 1), (-5/12 : 65/288 : 1) @}
+====================== extra points!!! ====================
+{}
+=============================== doing: 41  ======================
+Time: 0.540
+gamma 82*K.1 - 246
+[ <2, 24> ]
+Time: 0.890
+chabauty result true {@ (1 : 0 : 0), (-9 : -1722 : 1), (-9 : 1722 : 1) @}
+gamma -41
+[]
+Time: 2.520
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 +
+        (-1120*K3.1 + 1121)*x + (71847*K3.1 + 10584) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (-1120*K3.1 + 1121)*x +
+        (71847*K3.1 + 10584) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (-1120*K3.1 +
+        1121)*x + (71847*K3.1 + 10584) over K3 to Prj: P1
+    with equations :
+    $.1 - 14*K3.1*$.3
+    -41*$.3
+*]
+gamma 41
+[]
+Time: 84.950
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 8)*x^2 +
+        (1142*K2.1 - 3346)*x + (80216*K2.1 - 112560) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 8)*x^2 + (1142*K2.1 -
+        3346)*x + (80216*K2.1 - 112560) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 8)*x^2 +
+        (1142*K2.1 - 3346)*x + (80216*K2.1 - 112560) over K2 to Prj: P1
+    with equations :
+    $.1 + (15*K2.1 + 30)*$.3
+    41*$.3
+*]
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -82*K.1 + 82
+[ <2, 24> ]
+Time: 0.830
+chabauty result true {@ (1 : 0 : 0), (1/9 : -574/243 : 1), (1/9 : 574/243 : 1)
+@}
+gamma -K.1 + 2
+[]
+Time: 0.510[r]
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 41 {@ (1 : 0 : 0), (-9 : -1722 : 1), (-9 : 1722 : 1), (0 : 0 : 1),
+(1/9 : -574/243 : 1), (1/9 : 574/243 : 1) @}
+====================== extra points!!! ====================
+{}
+=============================== doing: 51  ======================
+Time: 0.470
+gamma 2*K.1 - 7
+[]
+Time: 1.190
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + x^2 + (-22*K3.1 +
+        49)*x + (50*K3.1 - 95) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + x^2 + (-22*K3.1 + 49)*x + (50*K3.1 -
+        95) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + x^2 + (-22*K3.1 + 49)*x
+    + (50*K3.1 - 95) over K3 to Prj: P1
+    with equations :
+    $.1 + (-K3.1 + 1)*$.3
+    (2*K3.1 - 7)*$.3
+*]
+gamma 17
+[]
+Time: 28.720
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 +
+        (198*K2.1 - 582)*x + (5180*K2.1 - 7924) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 + (198*K2.1 - 582)*x
+    + (5180*K2.1 - 7924) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 +
+        (198*K2.1 - 582)*x + (5180*K2.1 - 7924) over K2 to Prj: P1
+    with equations :
+    $.1 + (7*K2.1 + 12)*$.3
+    17*$.3
+*]
+gamma -6*K.1 + 21
+finding points
+Time: 0.140
+[]
+Time: 1.350
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (114*K3.1 - 42)*x +
+        (-476*K3.1 + 2244) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (114*K3.1 - 42)*x + (-476*K3.1 + 2244)
+    over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (114*K3.1 - 42)*x +
+        (-476*K3.1 + 2244) over K3 to Prj: P1
+    with equations :
+    (9*K3.1 - 6)*$.3
+    -$.1 + (-2*K3.1 + 7)*$.3
+*]
+gamma -51
+finding points
+Time: 0.130
+[]
+Time: 64.720
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 + (-1710*K2.1 +
+        5202)*x + (203472*K2.1 + 171072) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 to Prj: P1
+    with equations :
+    51*K2.1*$.3
+    -$.1 + (-36*K2.1 + 15)*$.3
+*]
+=============================== failed ======================
+51 $.1 + $.10 + $.11
+gamma -K.1 + 2
+[]
+Time: 0.490
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -51
+[]
+Time: 0.820
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -9*K.1 + 12
+[]
+Time: 1.300
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x +
+    (476*K3.1 + 1292) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x + (476*K3.1 +
+        1292) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x +
+        (476*K3.1 + 1292) over K3 to Prj: P1
+    with equations :
+    $.1 + (-2*K3.1 - 3)*$.3
+    (-9*K3.1 + 12)*$.3
+*]
+gamma 51*K.1
+[]
+Time: 64.050
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 + (-1710*K2.1 +
+        5202)*x + (203472*K2.1 + 171072) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 to Prj: P1
+    with equations :
+    $.1 + (36*K2.1 - 15)*$.3
+    51*K2.1*$.3
+*]
+gamma -3*K.1 + 4
+finding points
+Time: 0.140
+[]
+Time: 1.350
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + x^2 + (22*K3.1 + 5)*x
+    + (-50*K3.1 + 5) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + x^2 + (22*K3.1 + 5)*x + (-50*K3.1 + 5)
+    over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + x^2 + (22*K3.1 + 5)*x +
+    (-50*K3.1 + 5) over K3 to Prj: P1
+    with equations :
+    (-2*K3.1 - 3)*$.3
+    -$.1 + (-K3.1 + 1)*$.3
+*]
+gamma 17*K.1
+finding points
+Time: 0.110
+[]
+Time: 28.630
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 +
+        (198*K2.1 - 582)*x + (5180*K2.1 - 7924) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 + (198*K2.1 - 582)*x
+    + (5180*K2.1 - 7924) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 2)*x^2 +
+        (198*K2.1 - 582)*x + (5180*K2.1 - 7924) over K2 to Prj: P1
+    with equations :
+    17*$.3
+    -$.1 + (-7*K2.1 - 12)*$.3
+*]
+=============================== failed ======================
+51 $.1 + $.4 + $.8 + $.12 + $.13
+points for N: 51 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 70  ======================
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.860
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -10*K.1 + 5
+[]
+Time: 0.750
+chabauty result true {@ (1 : 0 : 0), (1/2 : -35/4 : 1), (1/2 : 35/4 : 1) @}
+gamma -35
+[]
+Time: 1.850
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -5*K.1 - 10
+[]
+Time: 1.690
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-184*K3.1 - 15)*x + (10135*K3.1 + 4106) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 + (-184*K3.1 - 15)*x +
+    (10135*K3.1 + 4106) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-184*K3.1 - 15)*x + (10135*K3.1 + 4106) over K3 to Prj: P1
+    with equations :
+    $.1 + (-7*K3.1 - 1)*$.3
+    (-5*K3.1 - 10)*$.3
+*]
+gamma 7*K.1 + 14
+[]
+Time: 38.570
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 +
+        (-294*K2.1 - 426)*x + (-5060*K2.1 - 5292) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-294*K2.1 - 426)*x +
+        (-5060*K2.1 - 5292) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-294*K2.1
+        - 426)*x + (-5060*K2.1 - 5292) over K2 to Prj: P1
+    with equations :
+    $.1 + (10*K2.1 + 7)*$.3
+    (7*K2.1 + 14)*$.3
+*]
+gamma 10*K.1 + 20
+finding points
+Time: 0.130
+[ <2, 12> ]
+Time: 0.760
+chabauty result true {@ (0 : 0 : 1), (-2 : -70 : 1), (-2 : 70 : 1) @}
+points for N: 70 {@ (1 : 0 : 0), (0 : 0 : 1), (1/2 : -35/4 : 1), (1/2 : 35/4 :
+1), (-2 : -70 : 1), (-2 : 70 : 1) @}
+====================== extra points!!! ====================
+{ 51 }
+=============================== doing: 79  ======================
+Time: 0.540
+gamma -79
+[]
+Time: 1.970
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.510[r]
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 79 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 93  ======================
+Time: 0.550
+gamma -4*K.1 + 3
+[]
+Time: 0.680
+chabauty result true {@ (1 : 0 : 0), (3/4 : -465/32 : 1), (3/4 : 465/32 : 1) @}
+gamma 15*K.1 - 42
+[]
+Time: 0.680
+chabauty result true {@ (1 : 0 : 0), (-4/3 : -310/9 : 1), (-4/3 : 310/9 : 1) @}
+gamma -93
+[]
+Time: 1.350
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -93
+[]
+Time: 1.380
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.450
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -K.1 + 2
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 93 {@ (1 : 0 : 0), (3/4 : -465/32 : 1), (3/4 : 465/32 : 1), (-4/3
+: -310/9 : 1), (-4/3 : 310/9 : 1), (0 : 0 : 1) @}
+====================== extra points!!! ====================
+{ 51 }
+=============================== doing: 94  ======================
+Time: 0.560
+gamma -47
+[]
+Time: 1.870
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.500
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 94 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 105  ======================
+Time: 0.480
+gamma -10*K.1 - 30
+[ <2, 24> ]
+Time: 0.760
+chabauty result true {@ (1 : 0 : 0), (-3 : -210 : 1), (-3 : 210 : 1) @}
+gamma -105
+[]
+Time: 0.360
+chabauty result true {@ @}
+gamma -90*K.1 + 30
+[ <2, 24> ]
+Time: 1.470
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-825*K3.1 - 75)*x +
+    (95750*K3.1 + 41000) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-825*K3.1 - 75)*x + (95750*K3.1 +
+        41000) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-825*K3.1 - 75)*x +
+        (95750*K3.1 + 41000) over K3 to Prj: P1
+    with equations :
+    4*$.1 + (-50*K3.1 - 30)*$.3
+    (-90*K3.1 + 30)*$.3
+*]
+gamma 126*K.1 - 42
+[ <2, 24> ]
+Time: 25.110
+chabauty result true {@ (1 : 0 : 0), (1/3 : -70/9 : 1), (1/3 : 70/9 : 1) @}
+gamma -K.1
+[]
+Time: 0.500
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 105 {@ (1 : 0 : 0), (-3 : -210 : 1), (-3 : 210 : 1), (1/3 : -70/9
+: 1), (1/3 : 70/9 : 1), (0 : 0 : 1) @}
+====================== extra points!!! ====================
+{ 51 }
+=============================== doing: 141  ======================
+Time: 0.550
+gamma -141
+[]
+Time: 3.350
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1
+[]
+Time: 0.490[r]
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 141 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 143  ======================
+Time: 0.380
+gamma -143
+[]
+Time: 0.310
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.660
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 143 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 159  ======================
+Time: 0.610
+gamma -53*K.1 + 106
+[]
+Time: 2.040
+chabauty result true {@ @}
+gamma -3
+[]
+Time: 0.610
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.490
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -159
+[]
+Time: 0.280
+chabauty result true {@ @}
+points for N: 159 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 182  ======================
+Time: 0.410
+gamma -K.1
+[]
+Time: 0.910
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -91
+[]
+Time: 2.010
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -91*K.1
+[]
+Time: 2.440
+chabauty result true {@ @}
+points for N: 182 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 187  ======================
+Time: 0.510
+gamma -K.1
+[]
+Time: 0.590
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -187
+[]
+Time: 2.100
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 187 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51 }
+=============================== doing: 205  ======================
+Time: 0.610
+gamma -205*K.1 + 410
+[]
+Time: 52.180
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + x^2 + (-84050*K3.1 +
+        196117)*x + (-11514850*K3.1 + 29420613) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + x^2 + (-84050*K3.1 + 196117)*x +
+        (-11514850*K3.1 + 29420613) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + x^2 + (-84050*K3.1 +
+        196117)*x + (-11514850*K3.1 + 29420613) over K3 to Prj: P1
+    with equations :
+    $.1 - 68*$.3
+    (-205*K3.1 + 410)*$.3
+*]
+gamma 25*K.1 - 20
+[]
+Time: 27.000
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 +
+        1118)*x + (14900*K2.1 - 59996) over K2 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 + 1118)*x +
+        (14900*K2.1 - 59996) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 +
+        1118)*x + (14900*K2.1 - 59996) over K2 to Prj: P1
+    with equations :
+    $.1 + (10*K2.1 - 21)*$.3
+    (25*K2.1 - 20)*$.3
+*]
+gamma -41*K.1 + 82
+finding points
+Time: 0.110
+[]
+Time: 2.130
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 +
+        (1120*K3.1 - 1119)*x + (-71847*K3.1 + 154278) over K3 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 + (1120*K3.1 - 1119)*x
+    + (-71847*K3.1 + 154278) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 +
+        (1120*K3.1 - 1119)*x + (-71847*K3.1 + 154278) over K3 to Prj: P1
+    with equations :
+    -41*$.3
+    -$.1 + (-14*K3.1 + 28)*$.3
+*]
+gamma 5*K.1 - 4
+finding points
+Time: 0.130
+[]
+Time: 14.800
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 +
+        (-74*K2.1 - 46)*x + (-516*K2.1 - 60) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-74*K2.1 - 46)*x +
+        (-516*K2.1 - 60) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-74*K2.1 -
+        46)*x + (-516*K2.1 - 60) over K2 to Prj: P1
+    with equations :
+    (4*K2.1 + 5)*$.3
+    -$.1 + (-5*K2.1 - 2)*$.3
+*]
+=============================== failed ======================
+205 $.2 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.16
+gamma -41*K.1 + 82
+[]
+Time: 5.400
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.740
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -41
+[]
+Time: 2.210
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 +
+        (-1120*K3.1 + 1121)*x + (71847*K3.1 + 10584) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (-1120*K3.1 + 1121)*x +
+        (71847*K3.1 + 10584) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (-1120*K3.1 +
+        1121)*x + (71847*K3.1 + 10584) over K3 to Prj: P1
+    with equations :
+    $.1 - 14*K3.1*$.3
+    -41*$.3
+*]
+gamma 4*K.1 + 5
+[]
+Time: 16.030
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 +
+        (-74*K2.1 - 46)*x + (-516*K2.1 - 60) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-74*K2.1 - 46)*x +
+        (-516*K2.1 - 60) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (-74*K2.1 -
+        46)*x + (-516*K2.1 - 60) over K2 to Prj: P1
+    with equations :
+    $.1 + (5*K2.1 + 2)*$.3
+    (4*K2.1 + 5)*$.3
+*]
+gamma 205
+finding points
+Time: 0.140
+[]
+Time: 56.770
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + x^2 + (84050*K3.1 +
+        28017)*x + (11514850*K3.1 + 6390913) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + x^2 + (84050*K3.1 + 28017)*x +
+        (11514850*K3.1 + 6390913) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + x^2 + (84050*K3.1 +
+        28017)*x + (11514850*K3.1 + 6390913) over K3 to Prj: P1
+    with equations :
+    205*K3.1*$.3
+    -$.1 + 68*$.3
+*]
+gamma -20*K.1 - 25
+finding points
+Time: 0.130
+[]
+Time: 28.410
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 +
+        1118)*x + (14900*K2.1 - 59996) over K2 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 + 1118)*x +
+        (14900*K2.1 - 59996) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*x^2 + (1850*K2.1 +
+        1118)*x + (14900*K2.1 - 59996) over K2 to Prj: P1
+    with equations :
+    (25*K2.1 - 20)*$.3
+    -$.1 + (-10*K2.1 + 21)*$.3
+*]
+=============================== failed ======================
+205 $.2 + $.5 + $.8 + $.16
+gamma -205
+[]
+Time: 2.000
+$.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 205
+[]
+Time: 140.810
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -5
+[]
+Time: 0.730
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 205 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205 }
+=============================== doing: 217  ======================
+Time: 0.640
+gamma -217
+[]
+Time: 2.810
+chabauty result true {@ @}
+gamma -2*K.1 - 14
+[ <2, 24> ]
+Time: 1.390
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (-11*K3.1 +
+        6)*x + (105*K3.1 + 30) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (-11*K3.1 + 6)*x + (105*K3.1 +
+        30) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (-11*K3.1 + 6)*x +
+    (105*K3.1 + 30) over K3 to Prj: P1
+    with equations :
+    4*$.1 + (-6*K3.1 - 2)*$.3
+    (-2*K3.1 - 14)*$.3
+*]
+gamma 62*K.1 - 62
+[ <2, 24> ]
+Time: 26.710
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 +
+        (961*K2.1 + 319)*x + (2420*K2.1 + 19220) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (961*K2.1 + 319)*x +
+        (2420*K2.1 + 19220) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (961*K2.1 +
+        319)*x + (2420*K2.1 + 19220) over K2 to Prj: P1
+    with equations :
+    -4*$.1 + (18*K2.1 - 62)*$.3
+    (62*K2.1 - 62)*$.3
+*]
+gamma 14*K.1 + 98
+finding points
+Time: 0.120
+[ <2, 24> ]
+Time: 2.450
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (2139*K3.1 + 802)*x + (48998*K3.1 + 22535) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 + (2139*K3.1 + 802)*x
+    + (48998*K3.1 + 22535) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (2139*K3.1 + 802)*x + (48998*K3.1 + 22535) over K3 to Prj: P1
+    with equations :
+    (126*K3.1 + 14)*$.3
+    -4*$.1 + (6*K3.1 + 30)*$.3
+*]
+gamma -434*K.1 + 434
+finding points
+Time: 0.100
+[ <2, 24> ]
+Time: 1630.280
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 +
+        (-47087*K2.1 - 15699)*x + (-6843602*K2.1 + 798768) over K2 given by a
+    rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 + (-47087*K2.1 -
+        15699)*x + (-6843602*K2.1 + 798768) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 +
+        (-47087*K2.1 - 15699)*x + (-6843602*K2.1 + 798768) over K2 to Prj: P1
+    with equations :
+    (-434*K2.1 - 434)*$.3
+    4*$.1 + (438*K2.1 + 146)*$.3
+*]
+=============================== failed ======================
+217 $.2 + $.5 + $.8 + $.12 + $.14
+gamma -K.1 + 2
+[]
+Time: 0.520
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -126*K.1 + 266
+[ <2, 24> ]
+Time: 1.920
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 +
+        (-2139*K3.1 + 5080)*x + (-48998*K3.1 + 120531) over K3 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (-2139*K3.1 + 5080)*x +
+        (-48998*K3.1 + 120531) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (-2139*K3.1 +
+        5080)*x + (-48998*K3.1 + 120531) over K3 to Prj: P1
+    with equations :
+    4*$.1 + (6*K3.1 - 42)*$.3
+    (-126*K3.1 + 266)*$.3
+*]
+gamma -434*K.1 - 434
+[ <2, 24> ]
+Time: 1781.410
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 +
+        (-47087*K2.1 - 15699)*x + (-6843602*K2.1 + 798768) over K2 given by a
+    rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 + (-47087*K2.1 -
+        15699)*x + (-6843602*K2.1 + 798768) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (3*K2.1 + 1)*x^2 +
+        (-47087*K2.1 - 15699)*x + (-6843602*K2.1 + 798768) over K2 to Prj: P1
+    with equations :
+    -4*$.1 + (-438*K2.1 - 146)*$.3
+    (-434*K2.1 - 434)*$.3
+*]
+gamma -18*K.1 + 38
+finding points
+Time: 0.120
+[ <2, 24> ]
+Time: 1.330
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (11*K3.1 -
+        16)*x + (-105*K3.1 + 240) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (11*K3.1 - 16)*x + (-105*K3.1 +
+        240) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (11*K3.1 - 16)*x +
+    (-105*K3.1 + 240) over K3 to Prj: P1
+    with equations :
+    (2*K3.1 - 18)*$.3
+    -4*$.1 + (-6*K3.1 + 14)*$.3
+*]
+gamma -62*K.1 - 62
+finding points
+Time: 0.100
+[ <2, 24> ]
+Time: 24.270
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 +
+        (961*K2.1 + 319)*x + (2420*K2.1 + 19220) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (961*K2.1 + 319)*x +
+        (2420*K2.1 + 19220) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 2*K2.1*x^2 + (961*K2.1 +
+        319)*x + (2420*K2.1 + 19220) over K2 to Prj: P1
+    with equations :
+    (62*K2.1 - 62)*$.3
+    4*$.1 + (-18*K2.1 + 62)*$.3
+*]
+=============================== failed ======================
+217 $.2 + $.4 + $.5 + $.6 + $.8 + $.9 + $.10 + $.11 + $.13 + $.14 + $.15
+points for N: 217 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 222  ======================
+Time: 0.390
+gamma -K.1
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -111
+[]
+Time: 1.460
+chabauty result true {@ @}
+points for N: 222 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 246  ======================
+Time: 0.570
+gamma -K.1 + 2
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -123
+[]
+Time: 1.560
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -123*K.1
+[]
+Time: 2.130
+chabauty result true {@ @}
+points for N: 246 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 274  ======================
+Time: 0.590
+gamma -137*K.1
+[]
+Time: 6.380
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -137
+[]
+Time: 2.490
+chabauty result true {@ @}
+gamma -1
+[]
+Time: 0.220
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.750
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 274 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 303  ======================
+Time: 0.510
+gamma -K.1
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -303
+[]
+Time: 0.320
+chabauty result true {@ @}
+gamma -101*K.1
+[]
+Time: 2.100
+chabauty result true {@ @}
+gamma -3
+[]
+Time: 0.610[r]
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 303 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 310  ======================
+Time: 0.540
+gamma -K.1
+[]
+Time: 0.500[r]
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -155
+[]
+Time: 7.200
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -155*K.1
+[]
+Time: 8.720
+chabauty result true {@ @}
+points for N: 310 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 313  ======================
+Time: 0.630
+gamma -313
+[]
+Time: 3.990
+chabauty result true {@ @}
+gamma -K.1 + 2
+[]
+Time: 0.540
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 313 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 319  ======================
+Time: 0.540
+gamma -11
+[]
+Time: 0.680
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -319
+[]
+Time: 0.340
+chabauty result true {@ @}
+gamma -K.1 + 2
+[]
+Time: 0.760
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -29*K.1 + 58
+[]
+Time: 4.300
+$.2 + $.3 + $.5 + $.6 + $.7 + $.10 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -29*K.1
+[]
+Time: 14.200
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 4)*x^2 +
+        (-550*K2.1 + 1682)*x + (-34632*K2.1 - 25920) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 4)*x^2 + (-550*K2.1 +
+        1682)*x + (-34632*K2.1 - 25920) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (4*K2.1 + 4)*x^2 +
+        (-550*K2.1 + 1682)*x + (-34632*K2.1 - 25920) over K2 to Prj: P1
+    with equations :
+    $.1 + (-18*K2.1 + 11)*$.3
+    -29*K2.1*$.3
+*]
+gamma -11*K.1 + 22
+finding points
+Time: 0.100
+[]
+Time: 0.680
+chabauty result true {@ (0 : 0 : 1) @}
+points for N: 319 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 345  ======================
+Time: 0.520
+gamma -345
+[]
+Time: 0.380
+chabauty result true {@ @}
+gamma -K.1 + 2
+[]
+Time: 0.550
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 345 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 366  ======================
+Time: 0.590
+gamma -K.1 + 2
+[]
+Time: 0.550
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -183
+[]
+Time: 3.830
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -183*K.1
+[]
+Time: 1.540
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.490
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 366 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 370  ======================
+Time: 0.430
+gamma -185
+[]
+Time: 5.320
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -185*K.1
+[]
+Time: 5.740
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.140
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -K.1 + 2
+[]
+Time: 0.560
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 370 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 391  ======================
+Time: 0.510
+gamma -17*K.1 - 68
+[]
+Time: 10.360
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 +
+        1349)*x + (1239810*K3.1 + 448635) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 + 1349)*x +
+        (1239810*K3.1 + 448635) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 +
+        1349)*x + (1239810*K3.1 + 448635) over K3 to Prj: P1
+    with equations :
+    $.1 + (-34*K3.1 - 6)*$.3
+    (-17*K3.1 - 68)*$.3
+*]
+gamma 23*K.1 - 92
+[]
+Time: 62.110
+$.4 + $.5 + $.8 + $.14 + $.16
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 17*K.1 + 68
+finding points
+Time: 0.120
+[]
+Time: 5.470
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1
+        - 17147)*x + (-2979547*K3.1 + 7220740) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1 - 17147)*x +
+        (-2979547*K3.1 + 7220740) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1 -
+        17147)*x + (-2979547*K3.1 + 7220740) over K3 to Prj: P1
+    with equations :
+    (102*K3.1 + 17)*$.3
+    (-2*K3.1 - 1)*$.1 + (4*K3.1 + 22)*$.3
+*]
+gamma -23*K.1 + 92
+finding points
+Time: 0.090
+[]
+Time: 86.110
+chabauty result true {@ (0 : 0 : 1) @}
+gamma -102*K.1 + 221
+[]
+Time: 5.300
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-7900*K3.1 - 1347)*x + (2979547*K3.1 + 1261646) over K3 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 + (-7900*K3.1 -
+        1347)*x + (2979547*K3.1 + 1261646) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-7900*K3.1 - 1347)*x + (2979547*K3.1 + 1261646) over K3 to Prj: P1
+    with equations :
+    (-2*K3.1 + 5)*$.1 + (4*K3.1 - 30)*$.3
+    (-102*K3.1 + 221)*$.3
+*]
+gamma 92*K.1 - 23
+[]
+Time: 91.160
+chabauty result true {@ (1 : 0 : 0), (1/4 : -391/32 : 1), (1/4 : 391/32 : 1) @}
+gamma -17*K.1 - 68
+[]
+Time: 9.990
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 +
+        1349)*x + (1239810*K3.1 + 448635) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 + 1349)*x +
+        (1239810*K3.1 + 448635) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - x^2 + (-5202*K3.1 +
+        1349)*x + (1239810*K3.1 + 448635) over K3 to Prj: P1
+    with equations :
+    $.1 + (-34*K3.1 - 6)*$.3
+    (-17*K3.1 - 68)*$.3
+*]
+gamma 23*K.1 + 92
+[]
+Time: 133.510
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (-3174*K2.1 -
+        18686)*x + (-101568*K2.1 - 1639976) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (-3174*K2.1 - 18686)*x +
+        (-101568*K2.1 - 1639976) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + 4*x^2 + (-3174*K2.1 -
+        18686)*x + (-101568*K2.1 - 1639976) over K2 to Prj: P1
+    with equations :
+    $.1 + (46*K2.1 + 55)*$.3
+    (23*K2.1 + 92)*$.3
+*]
+gamma 17*K.1 + 68
+finding points
+Time: 0.110
+[]
+Time: 5.650
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1
+        - 17147)*x + (-2979547*K3.1 + 7220740) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1 - 17147)*x +
+        (-2979547*K3.1 + 7220740) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (7900*K3.1 -
+        17147)*x + (-2979547*K3.1 + 7220740) over K3 to Prj: P1
+    with equations :
+    (102*K3.1 + 17)*$.3
+    (-2*K3.1 - 1)*$.1 + (4*K3.1 + 22)*$.3
+*]
+gamma -23*K.1 - 92
+finding points
+Time: 0.100
+[]
+Time: 93.900
+chabauty result true {@ (0 : 0 : 1), (-4 : -782 : 1), (-4 : 782 : 1) @}
+gamma -102*K.1 + 221
+[]
+Time: 5.630
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-7900*K3.1 - 1347)*x + (2979547*K3.1 + 1261646) over K3 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 + (-7900*K3.1 -
+        1347)*x + (2979547*K3.1 + 1261646) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 2)*x^2 +
+        (-7900*K3.1 - 1347)*x + (2979547*K3.1 + 1261646) over K3 to Prj: P1
+    with equations :
+    (-2*K3.1 + 5)*$.1 + (4*K3.1 - 30)*$.3
+    (-102*K3.1 + 221)*$.3
+*]
+gamma -92*K.1 - 23
+[]
+Time: 84.370
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.550
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -391
+[]
+Time: 0.400
+chabauty result true {@ @}
+points for N: 391 {@ (0 : 0 : 1), (1 : 0 : 0), (1/4 : -391/32 : 1), (1/4 :
+391/32 : 1), (-4 : -782 : 1), (-4 : 782 : 1) @}
+====================== extra points!!! ====================
+{ 51, 205, 217 }
+=============================== doing: 394  ======================
+Time: 0.350
+gamma -K.1
+[]
+Time: 0.520
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -197
+[]
+Time: 2.060
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 197*K.1
+[]
+Time: 5.250
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.140
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 394 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217 }
+=============================== doing: 395  ======================
+Time: 0.590
+gamma -K.1 - 8
+[]
+Time: 1.310
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 +
+        (-56*K3.1 + 33)*x + (1113*K3.1 + 294) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 + (-56*K3.1 + 33)*x +
+        (1113*K3.1 + 294) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (K3.1 - 2)*x^2 +
+        (-56*K3.1 + 33)*x + (1113*K3.1 + 294) over K3 to Prj: P1
+    with equations :
+    $.1 + (-3*K3.1 - 1)*$.3
+    (-K3.1 - 8)*$.3
+*]
+gamma 79*K.1
+[]
+Time: 74.070
+$.3 + $.5 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 5*K.1 + 40
+finding points
+Time: 0.100
+[]
+Time: 2.490
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 1)*x^2 +
+        (5350*K3.1 + 1984)*x + (191574*K3.1 + 89526) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 1)*x^2 + (5350*K3.1 + 1984)*x
+    + (191574*K3.1 + 89526) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-K3.1 + 1)*x^2 +
+        (5350*K3.1 + 1984)*x + (191574*K3.1 + 89526) over K3 to Prj: P1
+    with equations :
+    (50*K3.1 + 5)*$.3
+    -$.1 + (2*K3.1 + 13)*$.3
+*]
+gamma -395*K.1
+finding points
+Time: 0.090
+[]
+Time: 5.270
+$.3 + $.5 + $.12
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+chabauty result false <"mw failed", false, false>
+=============================== failed ======================
+395 $.3 + $.5 + $.12
+gamma -K.1
+[]
+Time: 0.520[r]
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -40*K.1 + 5
+[]
+Time: 2.740
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (K3.1 - 1)*x^2 +
+        (-5350*K3.1 + 12684)*x + (-191574*K3.1 + 472674) over K3 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (K3.1 - 1)*x^2 + (-5350*K3.1 +
+        12684)*x + (-191574*K3.1 + 472674) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (K3.1 - 1)*x^2 +
+        (-5350*K3.1 + 12684)*x + (-191574*K3.1 + 472674) over K3 to Prj: P1
+    with equations :
+    (2*K3.1 + 1)*$.1 + (-24*K3.1 - 13)*$.3
+    (-40*K3.1 + 5)*$.3
+*]
+gamma -395
+[]
+Time: 4.940
+$.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -8*K.1 + 1
+finding points
+Time: 0.100
+[]
+Time: 1.490
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (56*K3.1 -
+        79)*x + (-1113*K3.1 + 2520) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (56*K3.1 - 79)*x +
+        (-1113*K3.1 + 2520) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 - K3.1*x^2 + (56*K3.1 -
+        79)*x + (-1113*K3.1 + 2520) over K3 to Prj: P1
+    with equations :
+    (-15*K3.1 - 8)*$.3
+    (-2*K3.1 - 1)*$.1 + (-K3.1 + 1)*$.3
+*]
+gamma -79
+finding points
+Time: 0.090
+[]
+Time: 74.130
+$.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+chabauty result false <"mw failed", false, false>
+=============================== failed ======================
+395 $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+gamma -395
+[]
+Time: 8.060
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 395
+[]
+Time: 6.560
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.540
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 395 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 406  ======================
+Time: 0.580
+gamma -K.1 + 2
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -203
+[]
+Time: 2.340
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -203*K.1
+[]
+Time: 5.770
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.580
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 406 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 409  ======================
+Time: 0.740
+gamma -409
+[]
+Time: 11.200
+$.1 + $.5 + $.6 + $.9 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 409
+[]
+Time: 2.940
+chabauty result true {@ @}
+gamma 818*K.1 - 2454
+[ <2, 24> ]
+Time: 2.210
+$.3 + $.5 + $.7 + $.8 + $.10 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -34*K.1 + 46
+[ <2, 24> ]
+Time: 9.020
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -818*K.1 + 818
+[ <2, 24> ]
+Time: 15.810
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.520
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 409 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 411  ======================
+Time: 0.580
+gamma -K.1
+[]
+Time: 0.920
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -411
+[]
+Time: 8.010
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 411 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 415  ======================
+Time: 0.460
+gamma -415
+[]
+Time: 0.310
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.860
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 415 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 435  ======================
+Time: 0.580
+gamma -435
+[]
+Time: 8.940
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -145*K.1 + 290
+[]
+Time: 1549.700
+rank 3
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z + Z
+    Defined on 4 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + x^2 + (-42050*K3.1 +
+        98117)*x + (-4078850*K3.1 + 10420613) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + x^2 + (-42050*K3.1 + 98117)*x +
+        (-4078850*K3.1 + 10420613) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + x^2 + (-42050*K3.1 +
+        98117)*x + (-4078850*K3.1 + 10420613) over K3 to Prj: P1
+    with equations :
+    $.1 - 48*$.3
+    (-145*K3.1 + 290)*$.3
+*]
+gamma -145*K.1
+[]
+Time: 6.990
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.10 + $.13 + $.14 + $.15 + $.18
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -3*K.1 + 6
+finding points
+Time: 0.130
+[]
+Time: 0.610
+chabauty result true {@ (0 : 0 : 1) @}
+gamma -3
+[]
+Time: 0.630
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 435 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 442  ======================
+Time: 0.490
+gamma -221
+[]
+Time: 2.970
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1
+[]
+Time: 0.490
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 442 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 510  ======================
+Time: 0.520
+gamma -255
+[]
+Time: 19.880
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-43350*K3.1 +
+        43350)*x + (17195500*K3.1 + 2456500) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-43350*K3.1 + 43350)*x +
+        (17195500*K3.1 + 2456500) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-43350*K3.1 + 43350)*x
+    + (17195500*K3.1 + 2456500) over K3 to Prj: P1
+    with equations :
+    $.1 - 85*K3.1*$.3
+    -255*$.3
+*]
+gamma -255*K.1
+[]
+Time: 199.780
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1 + 2
+[]
+Time: 0.870
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 510 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 535  ======================
+Time: 0.380
+gamma -K.1
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -535
+[]
+Time: 0.310
+chabauty result true {@ @}
+points for N: 535 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 542  ======================
+Time: 0.560
+gamma -271
+[]
+Time: 2.650
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.570
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 542 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 546  ======================
+Time: 0.470
+gamma -117*K.1 - 78
+[]
+Time: 0.850
+chabauty result true {@ (1 : 0 : 0), (-2/3 : -182/9 : 1), (-2/3 : 182/9 : 1) @}
+gamma -K.1
+[]
+Time: 0.470
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -273
+[]
+Time: 118.250
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-49686*K3.1 +
+        49686)*x + (21099988*K3.1 + 3014284) over K3 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-49686*K3.1 + 49686)*x +
+        (21099988*K3.1 + 3014284) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-49686*K3.1 + 49686)*x
+    + (21099988*K3.1 + 3014284) over K3 to Prj: P1
+    with equations :
+    $.1 - 91*K3.1*$.3
+    -273*$.3
+*]
+gamma -273*K.1
+[]
+Time: 1.750
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.10 + $.13 + $.14 + $.15 + $.16
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.550
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -26*K.1 + 39
+[]
+Time: 0.820
+chabauty result true {@ (1 : 0 : 0), (3/2 : -273/4 : 1), (3/2 : 273/4 : 1) @}
+points for N: 546 {@ (1 : 0 : 0), (-2/3 : -182/9 : 1), (-2/3 : 182/9 : 1), (0 :
+0 : 1), (3/2 : -273/4 : 1), (3/2 : 273/4 : 1) @}
+====================== extra points!!! ====================
+{ 51, 205, 217, 395 }
+=============================== doing: 598  ======================
+Time: 0.610
+gamma -K.1 + 2
+[]
+Time: 0.480
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -299
+[]
+Time: 1.950
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -299*K.1
+[]
+Time: 3.090
+chabauty result true {@ @}
+points for N: 598 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 609  ======================
+Time: 0.540
+gamma -609
+[]
+Time: 0.360
+chabauty result true {@ @}
+gamma -406*K.1 - 406
+[ <2, 24> ]
+Time: 1.420
+chabauty result true {@ (1 : 0 : 0), (-3/7 : -174/49 : 1), (-3/7 : 174/49 : 1)
+@}
+gamma -174*K.1 + 174
+[ <2, 24> ]
+Time: 2.880
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-2523*K3.1 + 2523)*x
+    + (195112*K3.1 + 146334) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-2523*K3.1 + 2523)*x + (195112*K3.1 +
+        146334) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-2523*K3.1 + 2523)*x +
+    (195112*K3.1 + 146334) over K3 to Prj: P1
+    with equations :
+    4*$.1 + (-58*K3.1 - 58)*$.3
+    (-174*K3.1 + 174)*$.3
+*]
+gamma -18*K.1 + 42
+[ <2, 24> ]
+Time: 9.140
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-3*K2.1 - 3)*x^2 +
+        (255*K2.1 - 117)*x + (-2820*K2.1 - 518) over K2 given by a rule [no
+    inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-3*K2.1 - 3)*x^2 + (255*K2.1 - 117)*x
+    + (-2820*K2.1 - 518) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-3*K2.1 - 3)*x^2 +
+        (255*K2.1 - 117)*x + (-2820*K2.1 - 518) over K2 to Prj: P1
+    with equations :
+    -4*$.1 + (6*K2.1 + 38)*$.3
+    (-18*K2.1 + 42)*$.3
+*]
+gamma -406*K.1 + 406
+finding points
+Time: 0.110
+[ <2, 24> ]
+Time: 1.530
+chabauty result true {@ (0 : 0 : 1), (7/3 : -406/9 : 1), (7/3 : 406/9 : 1) @}
+gamma -K.1
+[]
+Time: 0.900
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 609 {@ (1 : 0 : 0), (-3/7 : -174/49 : 1), (-3/7 : 174/49 : 1), (0
+: 0 : 1), (7/3 : -406/9 : 1), (7/3 : 406/9 : 1) @}
+====================== extra points!!! ====================
+{ 51, 205, 217, 395 }
+=============================== doing: 634  ======================
+Time: 0.370
+gamma -K.1
+[]
+Time: 0.450
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -317
+[]
+Time: 1.950
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 317*K.1
+[]
+Time: 5.160
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.510
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 634 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 671  ======================
+Time: 0.430
+gamma -671
+[]
+Time: 0.350
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.550
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 671 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 679  ======================
+Time: 0.610
+gamma -679
+[]
+Time: 0.380
+chabauty result true {@ @}
+gamma -49*K.1 + 56
+[]
+Time: 1.420
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -K.1
+[]
+Time: 0.590
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -8*K.1 - 7
+[]
+Time: 1.500
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (-160*K3.1
+        + 369)*x + (1089*K3.1 - 2400) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (-160*K3.1 + 369)*x +
+        (1089*K3.1 - 2400) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + K3.1*x^2 + (-160*K3.1 +
+        369)*x + (1089*K3.1 - 2400) over K3 to Prj: P1
+    with equations :
+    (2*K3.1 + 1)*$.1 + (-6*K3.1 - 2)*$.3
+    (-8*K3.1 - 7)*$.3
+*]
+gamma 97
+[]
+Time: 2.610
+chabauty result true {@ @}
+gamma -97*K.1 - 194
+[]
+Time: 13.920
+$.4 + $.9 + $.10 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -63*K.1 - 28
+[]
+Time: 69.660
+$.4 + $.9 + $.10 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 97*K.1 + 194
+finding points
+Time: 0.110
+[]
+Time: 14.330
+$.4 + $.9 + $.10 + $.13
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 63*K.1 + 28
+finding points
+Time: 0.100
+[]
+Time: 87.790
+chabauty result true {@ (0 : 0 : 1), (-4/9 : -1358/243 : 1), (-4/9 : 1358/243 :
+1) @}
+gamma -194*K.1 + 97
+[]
+Time: 14.340
+$.5 + $.9 + $.12 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 28*K.1 - 63
+[]
+Time: 58.490
+chabauty result true {@ (1 : 0 : 0), (9/4 : -2037/32 : 1), (9/4 : 2037/32 : 1)
+@}
+points for N: 679 {@ (1 : 0 : 0), (0 : 0 : 1), (-4/9 : -1358/243 : 1), (-4/9 :
+1358/243 : 1), (9/4 : -2037/32 : 1), (9/4 : 2037/32 : 1) @}
+====================== extra points!!! ====================
+{ 51, 205, 217, 395 }
+=============================== doing: 697  ======================
+Time: 0.610
+gamma -697
+[]
+Time: 0.410
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.540
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 697 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 751  ======================
+Time: 0.850
+gamma -751
+[]
+Time: 3.700
+chabauty result true {@ @}
+gamma -K.1 + 2
+[]
+Time: 0.560
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 751 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395 }
+=============================== doing: 761  ======================
+Time: 0.910
+gamma -761
+[]
+Time: 6.640
+$.1 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 761
+[]
+Time: 4.750
+$.1 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.600
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma 1522*K.1 - 4566
+[ <2, 24> ]
+Time: 3.110
+$.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -2*K.1 + 78
+[ <2, 24> ]
+Time: 1.360
+$.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -1522*K.1 + 4566
+finding points
+Time: 0.110
+[ <2, 24> ]
+Time: 2.470
+$.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2*K.1 - 78
+finding points
+Time: 0.090
+[ <2, 24> ]
+Time: 1.470
+$.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+chabauty result false <"mw failed", false, false>
+=============================== failed ======================
+761 $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+gamma -K.1 + 2
+[]
+Time: 0.800
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -1522*K.1 + 1522
+[ <2, 24> ]
+Time: 3.150
+$.6 + $.7 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 78*K.1 + 2
+[ <2, 24> ]
+Time: 17.540
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 761 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 782  ======================
+Time: 0.530
+gamma -K.1
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -391
+[]
+Time: 0.340
+chabauty result true {@ @}
+points for N: 782 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 794  ======================
+Time: 0.370
+gamma -397
+[]
+Time: 2.640
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 397*K.1
+[]
+Time: 4.800
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.520
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -K.1 + 2
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 794 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 809  ======================
+Time: 0.820
+gamma -809
+[]
+Time: 6.060
+$.2 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 809
+[]
+Time: 5.220
+$.2 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -K.1 + 2
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 809 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 889  ======================
+Time: 0.620
+gamma -889
+[]
+Time: 6.350
+$.2 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -889
+[]
+Time: 3.490
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.490
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 889 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 939  ======================
+Time: 0.730
+gamma -313*K.1
+[]
+Time: 8.100
+$.1 + $.3 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -313*K.1
+[]
+Time: 7.070
+$.1 + $.3 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma -3*K.1
+finding points
+Time: 0.120
+[]
+Time: 0.590
+chabauty result true {@ (0 : 0 : 1) @}
+gamma -K.1
+[]
+Time: 0.520
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -939
+[]
+Time: 1.510
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 939
+[]
+Time: 2.000
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+chabauty result false <"mw failed", false, false>
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.540
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -3
+[]
+Time: 0.600
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 939 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 949  ======================
+Time: 0.690
+gamma -K.1
+[]
+Time: 0.600
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -949
+[]
+Time: 73.670
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 949 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 959  ======================
+Time: 0.590
+gamma -7
+[]
+Time: 0.290
+chabauty result true {@ @}
+gamma -959
+[]
+Time: 4.160
+chabauty result true {@ @}
+gamma -K.1
+[]
+Time: 0.530
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+gamma -137*K.1
+[]
+Time: 7.270
+chabauty result true {@ (1 : 0 : 0) @}
+points for N: 959 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+{ 51, 205, 217, 395, 761 }
+=============================== doing: 969  ======================
+Time: 0.570
+gamma -969
+[]
+Time: 0.410
+chabauty result true {@ @}
+gamma -76*K.1 - 57
+[]
+Time: 1.390
+chabauty result true {@ (1 : 0 : 0) @}
+gamma -9*K.1 + 12
+[]
+Time: 1.430
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x +
+    (476*K3.1 + 1292) over K3 given by a rule [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x + (476*K3.1 +
+        1292) over K3,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (-114*K3.1 + 186)*x +
+        (476*K3.1 + 1292) over K3 to Prj: P1
+    with equations :
+    $.1 + (-2*K3.1 - 3)*$.3
+    (-9*K3.1 + 12)*$.3
+*]
+gamma 51*K.1
+[]
+Time: 64.850
+rank 2
+chabauty result false [*
+    Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0,
+    Mapping from: Abelian Group isomorphic to Z/2 + Z + Z
+    Defined on 3 generators
+    Relations:
+        2*$.1 = 0 to Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 given by a rule
+    [no inverse],
+    Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 + (-1710*K2.1 +
+        5202)*x + (203472*K2.1 + 171072) over K2,
+    Mapping from: Elliptic Curve defined by y^2 = x^3 + (6*K2.1 + 6)*x^2 +
+        (-1710*K2.1 + 5202)*x + (203472*K2.1 + 171072) over K2 to Prj: P1
+    with equations :
+    $.1 + (36*K2.1 - 15)*$.3
+    51*K2.1*$.3
+*]
+gamma -57*K.1 + 76
+finding points
+Time: 0.100
+[]
+Time: 1.260
+chabauty result true {@ (0 : 0 : 1) @}
+gamma -K.1
+[]
+Time: 0.570
+chabauty result true {@ (1 : 0 : 0), (0 : 0 : 1) @}
+points for N: 969 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+>
+> print(Seqset(failed_list));
+{ 51, 205, 217, 395, 761 }
+> print(success_list);
+[ 10, 15, 41, 70, 79, 93, 94, 105, 141, 143, 159, 182, 187, 205, 222, 246, 274,
+303, 310, 313, 319, 345, 366, 370, 391, 394, 395, 406, 409, 411, 415, 435, 442,
+510, 535, 542, 546, 598, 609, 634, 671, 679, 697, 751, 761, 782, 794, 809, 889,
+939, 949, 959, 969 ]
+> print(extra_point_list);
+[*
+    <10, {@ (1 : 0 : 0), (0 : 0 : 1), (2 : -10 : 1), (2 : 10 : 1), (-1/2 : -5/4
+    : 1), (-1/2 : 5/4 : 1) @}>,
+    <15, {@ (0 : 0 : 1), (12/5 : -78/25 : 1), (12/5 : 78/25 : 1), (1 : 0 : 0),
+    (-5/12 : -65/288 : 1), (-5/12 : 65/288 : 1) @}>,
+    <41, {@ (1 : 0 : 0), (-9 : -1722 : 1), (-9 : 1722 : 1), (0 : 0 : 1), (1/9 :
+    -574/243 : 1), (1/9 : 574/243 : 1) @}>,
+    <70, {@ (1 : 0 : 0), (0 : 0 : 1), (1/2 : -35/4 : 1), (1/2 : 35/4 : 1), (-2 :
+    -70 : 1), (-2 : 70 : 1) @}>,
+    <93, {@ (1 : 0 : 0), (3/4 : -465/32 : 1), (3/4 : 465/32 : 1), (-4/3 : -310/9
+    : 1), (-4/3 : 310/9 : 1), (0 : 0 : 1) @}>,
+    <105, {@ (1 : 0 : 0), (-3 : -210 : 1), (-3 : 210 : 1), (1/3 : -70/9 : 1),
+    (1/3 : 70/9 : 1), (0 : 0 : 1) @}>,
+    <391, {@ (0 : 0 : 1), (1 : 0 : 0), (1/4 : -391/32 : 1), (1/4 : 391/32 : 1),
+    (-4 : -782 : 1), (-4 : 782 : 1) @}>,
+    <546, {@ (1 : 0 : 0), (-2/3 : -182/9 : 1), (-2/3 : 182/9 : 1), (0 : 0 : 1),
+    (3/2 : -273/4 : 1), (3/2 : 273/4 : 1) @}>,
+    <609, {@ (1 : 0 : 0), (-3/7 : -174/49 : 1), (-3/7 : 174/49 : 1), (0 : 0 :
+    1), (7/3 : -406/9 : 1), (7/3 : 406/9 : 1) @}>,
+    <679, {@ (1 : 0 : 0), (0 : 0 : 1), (-4/9 : -1358/243 : 1), (-4/9 : 1358/243
+    : 1), (9/4 : -2037/32 : 1), (9/4 : 2037/32 : 1) @}>
+*]
+> [pts[1] : pts in extra_point_list];
+[ 10, 15, 41, 70, 93, 105, 391, 546, 609, 679 ]
+>

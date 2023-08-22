@@ -1,0 +1,4453 @@
+Maartens-MBP:mdmagma mderickx$ magma
+Magma V2.26-10    Sat May  7 2022 11:34:45 on Maartens-MBP [Seed = 3285687454]
+
++-------------------------------------------------------------------+
+|       This copy of Magma has been made available through a        |
+|                   generous initiative of the                      |
+|                                                                   |
+|                         Simons Foundation                         |
+|                                                                   |
+| covering U.S. Colleges, Universities, Nonprofit Research entities,|
+|               and their students, faculty, and staff              |
++-------------------------------------------------------------------+
+
+Type ? for help.  Type <Ctrl>-D to quit.
+> QQ:=Rationals();
+> Qx<x> := PolynomialRing(QQ);
+> P1:=ProjectiveSpace(QQ,1);
+>
+> function Zip(a, b)
+function>   //similar to pythons zip function
+function>   assert #a eq #b;
+function>   n := #a;
+function>   return [<a[i],b[i]> : i in [1..n]];
+function> end function;
+>
+> function createHktoA(AtoHk, expvecs, factorbase)
+function>   A := Domain(AtoHk);
+function>   A2 := Parent(factorbase[1]);
+function>   phi := hom< A2 -> A | A.1 >;
+function>   Hk := Domain(expvecs);
+function>   HktoA := map< Hk -> A | h :-> phi(&*[ef[2]^ef[1] : ef in Zip(Eltseq(expvecs(h)),factorbase)])>;
+function>   return HktoA;
+function> end function;
+>
+>
+>
+>
+> function EllipticChabauty(C, g, hk, HktoA)
+function>   assert BaseRing(C) eq QQ;
+function>   assert Degree(g) in [3,4];
+function>   success := true;
+function>   points := {@ @};
+function>   CtoP1 := map< C -> P1 | [C.1,C.3] >;
+function>   K := BaseRing(g);
+function>   A := Codomain(HktoA);
+function>   f := ChangeRing(Modulus(A), QQ);
+function>   L := quo< Parent(g) | g>;
+function>   assert Evaluate(f, L.1) eq 0;
+function>   AtoL := hom< A -> L | L.1>;
+function>
+function>   gamma := Norm(AtoL(HktoA(hk)));
+function>
+function>   for p in PrimeDivisors(Numerator(Norm(gamma))) do
+function|for>     while IsIntegral(gamma/p^2) do
+function|for|while>       gamma := gamma/p^2;
+function|for|while>     end while;
+function|for>   end for;
+function>   print "gamma", gamma;
+function>
+function>   E := HyperellipticCurve(gamma*g);
+function>   EtoP1:=map<E->P1|[E.1,E.3]>;
+function>   iselliptic, E1raw, EtoE1raw, E1rawtoE := IsEllipticCurve(E);
+function>   if not iselliptic then
+function|if>     print "finding points";
+function|if>     time Epoints := Points(E : Bound:=100);
+function|if>     //print #Epoints;
+function|if>     if #Epoints eq 0 then
+function|if|if>       success := false;
+function|if|if>       print "no points found";
+function|if|if>       return success, points;
+function|if|if>     end if;
+function|if>     iselliptic := true;
+function|if>     P0 := Setseq(Epoints)[1];
+function|if>     E1raw,EtoE1raw:=EllipticCurve(E,P0);
+function|if>     E1rawtoE := Inverse(EtoE1raw);
+function|if>   end if;
+function>
+function>   //todo make everything work with a minimal model if we can find one
+function>   //this will make computations much faster
+function>   E1 := MinimalModel(E1raw);
+function>   print Factorization(Integers() ! Norm(Discriminant(E1raw)/Discriminant(E1)));
+function>   time MW1, MW1toE1set, flag1, flag2 := MordellWeilGroup(E1);
+function>   success := success and flag1 and flag2;
+function>   if not success then;
+function|if>     print hk, g, flag1, flag2;
+function|if>   end if;
+function>   MW1toE1 := map<MW1 -> E1 | x :-> MW1toE1set(x)>;
+function>   //print Invariants(MW1), flag1, flag2;
+function>   if TorsionFreeRank(MW1) ge Degree(K) then
+function|if>     print "rank", TorsionFreeRank(MW1);
+function|if>     success := false;
+function|if>     return success, points;
+function|if>   end if;
+function>   E1toE1raw := Isomorphism(E1,E1raw);
+function>   //E1rawtoE1 := Inverse(E1toE1raw);
+function>   E1toE := E1toE1raw*E1rawtoE;
+function>   E1toP1 := Expand(E1toE1raw*E1rawtoE*EtoP1);
+function>   //E1rawtoP1 := Expand(E1rawtoE*EtoP1);
+function>   pointset := Chabauty(MW1toE1, E1toP1);
+function>
+function>
+function>   for t in pointset do
+function|for>     //print Parent(t),t;
+function|for>     P := E1toE(MW1toE1(t));
+function|for>     xP := EtoP1(P);
+function|for>     xP := P1(QQ) ! xP;
+function|for>     new_points := RationalPoints( xP@@CtoP1 );
+function|for>     //print t, xP, RationalPoints( xP@@CtoP1 );
+function|for>     points := points join new_points;
+function|for>   end for;
+function>   return success, points;
+function> end function;
+>
+>
+> f1 := -x;
+> f2 := x^2+1;
+> f3 := x^2 - 2*x - 1;
+> f := f1*f2*f3;
+>
+> g1 := -x;
+> g2 := x^2+1;
+> g3 := -x^2 - 2*x + 1;
+> g := g1*g2*g3;
+> //f := 2*x^6+x^4+3*x^2-2;
+> for N in [1..1000] do
+for>   if not IsSquarefree(N) then continue; end if;
+for>
+for>   C := HyperellipticCurve(N*f);
+for>   C1 := HyperellipticCurve(N*g);
+for>   time Hk , AtoHk, expvecs, factorbase := TwoCoverDescent(C: PrimeBound:=30, Raw:=true);
+for>   HktoA := createHktoA(AtoHk, expvecs, factorbase);
+for>
+for>   K2 := NumberField(f2);
+for>   f2a := Factorization(ChangeRing(f2, K2))[1][1];
+for>   f2E := f3*f2a;
+for>   g2a := Factorization(ChangeRing(g2, K2))[1][1];
+for>   g2E := g3*g2a;
+for>
+for>   K3 := NumberField(f3);
+for>   f3a := Factorization(ChangeRing(f3, K3))[1][1];
+for>   f3E := f2*f3a;
+for>   g3a := Factorization(ChangeRing(g3, K3))[1][1];
+for>   g3E := g2*g3a;
+for>
+for>   //print "#Hk:", #Hk;
+for>   Hk := Setseq(Hk);
+for>   points := {@ @};
+for>   for i in [1..#Hk] do
+for|for>     hk := Hk[i];
+for|for>     //print "doing hk", i, hk;
+for|for>     assert AtoHk(HktoA(hk)) eq hk;
+for|for>     success := false;
+for|for>     for fE in [*f3E,f2E,x*f3E,x*f2E*] do
+for|for|for>       success, new_points := EllipticChabauty(C, fE, hk, HktoA);
+for|for|for>       //print "chabauty result", success, new_points;
+for|for|for>       points := points join new_points;
+for|for|for>       if success then break; end if;
+for|for|for>     end for;
+for|for>     if not success then;
+for|for|if>       print "=============================== failed ======================";
+for|for|if>       print N, hk;
+for|for|if>     end if;
+for|for>   end for;
+for>   print "points for N:", N, points;
+for>   if #points gt 2 then
+for|if>     print "====================== extra points!!! ====================";
+for|if>   end if;
+for> end for;
+Time: 0.410
+gamma -K.1
+[]
+Time: 0.920
+gamma -1
+[]
+Time: 0.230
+gamma -2*K.1 - 2
+[ <2, 24> ]
+Time: 0.590[r]
+gamma -2*K.1 + 2
+[ <2, 24> ]
+Time: 0.590
+points for N: 1 {@ (1 : 0 : 0), (0 : 0 : 1), (-1 : -2 : 1), (-1 : 2 : 1), (1 :
+-2 : 1), (1 : 2 : 1) @}
+====================== extra points!!! ====================
+Time: 0.250
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -1
+[]
+Time: 0.220
+points for N: 2 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -3
+[]
+Time: 0.500
+gamma -K.1 + 2
+[]
+Time: 0.480
+points for N: 3 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -5
+[]
+Time: 0.610
+gamma -K.1 + 2
+[]
+Time: 0.440
+points for N: 5 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -K.1 + 2
+[]
+Time: 0.540
+gamma -3
+[]
+Time: 0.520
+points for N: 6 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -7
+[]
+Time: 0.290
+gamma -K.1 + 2
+[]
+Time: 0.480
+points for N: 7 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.470
+gamma -5*K.1
+[]
+Time: 1.230
+rank 2
+gamma K.1 - 2
+[]
+Time: 1.300
+rank 2
+gamma -10*K.1
+finding points
+Time: 0.120
+[ <2, 12> ]
+Time: 0.610
+gamma -5
+[]
+Time: 0.600
+gamma -5
+[]
+Time: 0.590
+points for N: 10 {@ (1 : 0 : 0), (0 : 0 : 1), (2 : -10 : 1), (2 : 10 : 1), (-1/2
+: -5/4 : 1), (-1/2 : 5/4 : 1) @}
+====================== extra points!!! ====================
+Time: 0.280
+gamma -K.1 + 2
+[]
+Time: 0.710
+gamma -11
+[]
+Time: 0.620[r]
+points for N: 11 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -13
+[]
+Time: 0.740
+gamma -K.1
+[]
+Time: 0.470
+points for N: 13 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.350
+gamma -7
+[]
+Time: 0.280
+gamma -K.1
+[]
+Time: 0.670
+points for N: 14 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -5*K.1
+[]
+Time: 1.210
+rank 2
+gamma -5*K.1
+[]
+Time: 3.150
+rank 2
+gamma -3*K.1
+finding points
+Time: 0.120
+[]
+Time: 0.520
+gamma -3
+[]
+Time: 0.550
+gamma -K.1
+[]
+Time: 0.470
+gamma -15
+[]
+Time: 0.280
+points for N: 15 {@ (0 : 0 : 1), (12/5 : -78/25 : 1), (12/5 : 78/25 : 1), (1 : 0
+: 0), (-5/12 : -65/288 : 1), (-5/12 : 65/288 : 1) @}
+====================== extra points!!! ====================
+Time: 0.450
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -17
+[]
+Time: 0.320
+points for N: 17 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -19
+[]
+Time: 0.770
+gamma -K.1 + 2
+[]
+Time: 0.490
+points for N: 19 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.440
+gamma -21
+[]
+Time: 0.600
+gamma -K.1 + 2
+[]
+Time: 0.660
+points for N: 21 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -K.1
+[]
+Time: 0.670
+gamma -11
+[]
+Time: 0.600
+points for N: 22 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -K.1 + 2
+[]
+Time: 0.490
+gamma -23
+[]
+Time: 0.290
+points for N: 23 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -13
+[]
+Time: 0.700
+gamma -K.1
+[]
+Time: 0.570
+points for N: 26 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -29
+[]
+Time: 1.630
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 29
+[]
+Time: 1.320
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.480
+gamma -K.1 + 2
+[]
+Time: 0.630
+points for N: 29 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.530
+gamma -15
+[]
+Time: 0.290
+points for N: 30 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.470
+gamma -31
+[]
+Time: 2.310
+gamma -K.1 + 2
+[]
+Time: 0.880
+points for N: 31 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.580
+gamma -33
+[]
+Time: 1.560
+rank 2
+gamma -33
+[]
+Time: 1.840
+points for N: 33 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -17
+[]
+Time: 0.330
+gamma -K.1
+[]
+Time: 0.470
+points for N: 34 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -35
+[]
+Time: 1.870
+points for N: 35 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -37
+[]
+Time: 1.380
+gamma -K.1
+[]
+Time: 0.500
+points for N: 37 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -K.1 + 2
+[]
+Time: 0.570
+gamma -19
+[]
+Time: 0.870
+points for N: 38 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1
+[]
+Time: 0.540
+gamma -39
+[]
+Time: 1.370
+points for N: 39 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -41
+[]
+Time: 2.740
+rank 2
+gamma 41
+[]
+Time: 90.870
+rank 2
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.520
+gamma -82*K.1 - 82
+[ <2, 24> ]
+Time: 0.990
+gamma -K.1
+[]
+Time: 0.520
+gamma -82*K.1 + 82
+[ <2, 24> ]
+Time: 1.200
+points for N: 41 {@ (1 : 0 : 0), (0 : 0 : 1), (-9 : -1722 : 1), (-9 : 1722 : 1),
+(1/9 : -574/243 : 1), (1/9 : 574/243 : 1) @}
+====================== extra points!!! ====================
+Time: 0.400
+gamma -21
+[]
+Time: 0.740
+gamma -K.1 + 2
+[]
+Time: 0.460
+points for N: 42 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -43
+[]
+Time: 1.750
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 43
+[]
+Time: 1.430
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.710
+gamma -K.1 + 2
+[]
+Time: 0.480
+points for N: 43 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -23
+[]
+Time: 0.270
+gamma -K.1 + 2
+[]
+Time: 0.540
+points for N: 46 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.470
+gamma -47
+[]
+Time: 2.030
+gamma -K.1
+[]
+Time: 0.500
+points for N: 47 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -4*K.1 - 3
+[]
+Time: 1.110
+rank 2
+gamma 17
+[]
+Time: 46.820
+rank 2
+gamma 12*K.1 + 9
+finding points
+Time: 0.130
+[]
+Time: 1.650
+rank 2
+gamma -51
+finding points
+Time: 0.190
+[]
+Time: 66.150
+rank 2
+=============================== failed ======================
+51 $.1 + $.10 + $.11 + $.15
+gamma -K.1
+[]
+Time: 0.550
+gamma -51
+[]
+Time: 0.770
+gamma -9*K.1 + 12
+[]
+Time: 1.430
+rank 2
+gamma 51*K.1
+[]
+Time: 64.460
+rank 2
+gamma -3*K.1 + 4
+finding points
+Time: 0.150
+[]
+Time: 1.260
+rank 2
+gamma 17*K.1
+finding points
+Time: 0.120
+[]
+Time: 46.400
+rank 2
+=============================== failed ======================
+51 $.1 + $.4 + $.8 + $.12 + $.13
+points for N: 51 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -53
+[]
+Time: 1.690
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 53
+[]
+Time: 67.490
+gamma -K.1 + 2
+[]
+Time: 0.520
+points for N: 53 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -55
+[]
+Time: 2.400
+gamma -K.1
+[]
+Time: 0.560
+points for N: 55 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -57
+[]
+Time: 1.340
+gamma -K.1
+[]
+Time: 0.580
+points for N: 57 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -K.1
+[]
+Time: 0.540
+gamma -29
+[]
+Time: 1.840
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 29*K.1
+[]
+Time: 43.920
+rank 2
+gamma 2
+finding points
+Time: 0.140
+[]
+Time: 0.520
+points for N: 58 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -59
+[]
+Time: 1.670
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 59
+[]
+Time: 1.510
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.520
+gamma -K.1
+[]
+Time: 0.540
+points for N: 59 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -61
+[]
+Time: 1.730
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 61
+[]
+Time: 1.580
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.490
+gamma -K.1
+[]
+Time: 0.800
+points for N: 61 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -31
+[]
+Time: 2.120
+gamma -K.1
+[]
+Time: 0.680
+points for N: 62 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -K.1
+[]
+Time: 0.630
+gamma -65
+[]
+Time: 2.950
+points for N: 65 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -33
+[]
+Time: 1.450
+rank 2
+gamma -33*K.1
+[]
+Time: 28.690
+gamma -K.1 + 2
+[]
+Time: 0.530
+points for N: 66 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.350
+gamma -67
+[]
+Time: 1.800
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 67
+[]
+Time: 1.480
+$.1 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.150
+[]
+Time: 0.550
+gamma -K.1
+[]
+Time: 0.540
+points for N: 67 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.640
+gamma -69
+[]
+Time: 1.590
+$.1 + $.2 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -69
+[]
+Time: 69.580
+gamma -K.1
+[]
+Time: 0.650
+points for N: 69 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -10*K.1 + 5
+[]
+Time: 0.920
+gamma -K.1
+[]
+Time: 0.500
+gamma -35
+[]
+Time: 1.810
+gamma -5*K.1 - 10
+[]
+Time: 1.800
+rank 2
+gamma -7*K.1 - 14
+[]
+Time: 7.580
+rank 3
+gamma 10*K.1 + 20
+finding points
+Time: 0.140
+[ <2, 12> ]
+Time: 0.880
+points for N: 70 {@ (1 : 0 : 0), (1/2 : -35/4 : 1), (1/2 : 35/4 : 1), (0 : 0 :
+1), (-2 : -70 : 1), (-2 : 70 : 1) @}
+====================== extra points!!! ====================
+Time: 0.530
+gamma -71
+[]
+Time: 0.400
+gamma -K.1
+[]
+Time: 0.530
+points for N: 71 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -73
+[]
+Time: 3.140
+rank 2
+gamma 73
+[]
+Time: 79.680
+rank 2
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.540
+gamma -K.1
+[]
+Time: 0.510
+points for N: 73 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -37
+[]
+Time: 0.900
+gamma -K.1
+[]
+Time: 0.530
+points for N: 74 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -77
+[]
+Time: 1.860
+$.2 + $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -77
+[]
+Time: 51.370
+gamma -K.1
+[]
+Time: 0.750
+points for N: 77 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.530
+gamma -39
+[]
+Time: 1.400
+points for N: 78 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -79
+[]
+Time: 2.380
+gamma -K.1
+[]
+Time: 0.480
+points for N: 79 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -41
+[]
+Time: 2.240
+rank 2
+gamma 41*K.1
+[]
+Time: 55.970
+gamma -K.1 + 2
+[]
+Time: 0.520
+points for N: 82 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.310
+gamma -83
+[]
+Time: 1.930
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 83
+[]
+Time: 1.540
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.490
+gamma -K.1 + 2
+[]
+Time: 0.570
+points for N: 83 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -85
+[]
+Time: 1.700
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -85
+[]
+Time: 66.510
+gamma -K.1
+[]
+Time: 0.540
+points for N: 85 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.330
+gamma -K.1
+[]
+Time: 0.530
+gamma -43
+[]
+Time: 1.760
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -43*K.1
+[]
+Time: 0.280
+points for N: 86 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -29*K.1
+[]
+Time: 4.570
+$.1 + $.3 + $.5 + $.6 + $.7 + $.10 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -29*K.1
+[]
+Time: 23.390
+rank 2
+gamma -3*K.1
+finding points
+Time: 0.140
+[]
+Time: 0.660
+gamma -3
+[]
+Time: 0.720
+gamma -K.1
+[]
+Time: 0.510
+gamma -87
+[]
+Time: 0.320
+points for N: 87 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+Time: 0.570
+gamma -89
+[]
+Time: 4.260
+$.1 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 89
+[]
+Time: 1.980
+gamma -K.1
+[]
+Time: 0.500
+points for N: 89 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1
+[]
+Time: 0.550
+gamma -91
+[]
+Time: 1.880
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 91
+[]
+Time: 132.790
+points for N: 91 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.610
+gamma -4*K.1 + 3
+[]
+Time: 0.670
+gamma -9*K.1 - 12
+[]
+Time: 0.720
+gamma -93
+[]
+Time: 1.490
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -93
+[]
+Time: 1.750
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.170
+[]
+Time: 0.600
+gamma -K.1
+[]
+Time: 1.000
+points for N: 93 {@ (1 : 0 : 0), (3/4 : -465/32 : 1), (3/4 : 465/32 : 1), (-4/3
+: -310/9 : 1), (-4/3 : 310/9 : 1), (0 : 0 : 1) @}
+====================== extra points!!! ====================
+Time: 0.570
+gamma -47
+[]
+Time: 2.520
+gamma -K.1 + 2
+[]
+Time: 0.730
+points for N: 94 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.440
+gamma -95
+[]
+Time: 6.580
+rank 2
+gamma -95
+[]
+Time: 1.650
+gamma -K.1
+[]
+Time: 0.520
+points for N: 95 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -97
+[]
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.550[r]
+points for N: 97 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -101
+[]
+Time: 1.730
+$.1 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 101
+[]
+Time: 1.420
+$.1 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.170
+[]
+Time: 0.520
+gamma -K.1
+[]
+Time: 0.500
+points for N: 101 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -K.1
+[]
+Time: 0.550
+gamma -51
+[]
+Time: 0.760
+points for N: 102 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -103
+[]
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.900
+points for N: 103 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -10*K.1 - 30
+[ <2, 24> ]
+Time: 0.780
+gamma -105
+[]
+Time: 0.360
+gamma -150*K.1 + 330
+[ <2, 24> ]
+Time: 1.490
+rank 2
+gamma 126*K.1 - 42
+[ <2, 24> ]
+Time: 27.090
+gamma -K.1 + 2
+[]
+Time: 0.640
+points for N: 105 {@ (1 : 0 : 0), (-3 : -210 : 1), (-3 : 210 : 1), (1/3 : -70/9
+: 1), (1/3 : 70/9 : 1), (0 : 0 : 1) @}
+====================== extra points!!! ====================
+Time: 0.370
+gamma -53
+[]
+Time: 1.670
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 53*K.1
+[]
+Time: 1.610
+gamma -K.1
+[]
+Time: 0.590
+points for N: 106 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -107
+[]
+Time: 2.020
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 107
+[]
+Time: 1.760
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.160
+[]
+Time: 0.570
+gamma -K.1
+[]
+Time: 0.590
+points for N: 107 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -109
+[]
+Time: 1.840
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 109
+[]
+Time: 1.560
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.580
+points for N: 109 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -55
+[]
+Time: 2.310
+gamma -K.1 + 2
+[]
+Time: 0.530
+points for N: 110 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.540
+gamma -111
+[]
+Time: 1.630
+points for N: 111 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.950
+gamma -113
+[]
+Time: 0.310
+gamma -K.1 + 2
+[]
+Time: 0.570
+points for N: 113 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.330
+gamma -K.1
+[]
+Time: 0.520
+gamma -57
+[]
+Time: 1.410
+points for N: 114 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -K.1 + 2
+[]
+Time: 0.780
+gamma -115
+[]
+Time: 1.310
+points for N: 115 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -K.1
+[]
+Time: 0.510
+gamma -59
+[]
+Time: 1.740
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -59*K.1
+[]
+Time: 0.260
+points for N: 118 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -K.1
+[]
+Time: 0.860
+gamma -119
+[]
+Time: 0.360
+points for N: 119 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -K.1
+[]
+Time: 0.540
+gamma -61
+[]
+Time: 1.810
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 61*K.1
+[]
+Time: 1.840
+points for N: 122 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -K.1
+[]
+Time: 0.570
+gamma -123
+[]
+Time: 1.420
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 123
+[]
+Time: 141.580
+points for N: 123 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.630
+gamma -127
+[]
+Time: 5.500
+$.2 + $.4 + $.5 + $.8 + $.9 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 127
+[]
+Time: 2.050
+gamma -K.1
+[]
+Time: 0.580
+points for N: 127 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -129
+[]
+Time: 7.750
+rank 2
+gamma -129
+[]
+Time: 2.420
+gamma -K.1
+[]
+Time: 0.480
+points for N: 129 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.480
+gamma -65
+[]
+Time: 2.430
+gamma -K.1 + 2
+[]
+Time: 0.550
+points for N: 130 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -131
+[]
+Time: 1.690
+gamma -K.1 + 2
+[]
+Time: 0.900
+points for N: 131 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -133
+[]
+Time: 1.950
+$.2 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -133
+[]
+Time: 102.270
+gamma -K.1
+[]
+Time: 0.520
+points for N: 133 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.540
+gamma -67
+[]
+Time: 2.010
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -67*K.1
+[]
+Time: 0.280
+points for N: 134 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -1
+[]
+Time: 0.260
+gamma -137*K.1 + 274
+[]
+Time: 7.610
+gamma -K.1 + 2
+[]
+Time: 0.580
+gamma -137
+[]
+Time: 2.940
+points for N: 137 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.600
+gamma -69
+[]
+Time: 1.750
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -69*K.1
+[]
+Time: 0.370
+gamma -K.1
+[]
+Time: 0.580
+points for N: 138 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -139
+[]
+Time: 2.420
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 139
+[]
+Time: 1.650
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.450
+gamma -K.1 + 2
+[]
+Time: 0.530
+points for N: 139 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -141
+[]
+Time: 4.110
+gamma -K.1 + 2
+[]
+Time: 0.570
+points for N: 141 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -71
+[]
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.510
+points for N: 142 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -143
+[]
+Time: 0.330
+gamma -K.1 + 2
+[]
+Time: 0.730
+points for N: 143 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -145
+[]
+Time: 3.250
+gamma -K.1
+[]
+Time: 0.640
+points for N: 145 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -73
+[]
+Time: 3.270
+rank 2
+gamma 73*K.1
+[]
+Time: 1.580
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.590
+gamma -K.1
+[]
+Time: 0.560
+points for N: 146 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -149
+[]
+Time: 1.820
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 149
+[]
+Time: 1.550
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.510
+gamma -K.1 + 2
+[]
+Time: 0.500
+points for N: 149 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.520
+gamma -151
+[]
+Time: 0.280
+gamma -K.1
+[]
+Time: 0.720
+points for N: 151 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -77
+[]
+Time: 1.540
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -77*K.1
+[]
+Time: 0.270
+gamma -K.1
+[]
+Time: 0.900
+points for N: 154 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -K.1 + 2
+[]
+Time: 0.460[r]
+gamma -155
+[]
+Time: 6.990
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 155
+[]
+Time: 187.920
+points for N: 155 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -157
+[]
+Time: 1.870
+$.1 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 157
+[]
+Time: 1.510
+$.1 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.490
+gamma -K.1 + 2
+[]
+Time: 0.540
+points for N: 157 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -79
+[]
+Time: 2.410
+gamma -K.1 + 2
+[]
+Time: 0.450
+points for N: 158 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -53*K.1
+[]
+Time: 2.000
+gamma -3
+[]
+Time: 0.630
+gamma -K.1
+[]
+Time: 0.480
+gamma -159
+[]
+Time: 0.320
+points for N: 159 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -K.1
+[]
+Time: 0.490
+gamma -161
+[]
+Time: 0.320
+points for N: 161 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.280
+gamma -163
+[]
+Time: 1.720
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 163
+[]
+Time: 1.540
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.510
+gamma -K.1
+[]
+Time: 0.490
+points for N: 163 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.430
+gamma -K.1
+[]
+Time: 0.510
+gamma -165
+[]
+Time: 1.780
+points for N: 165 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.840
+gamma -83
+[]
+Time: 1.810
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -83*K.1
+[]
+Time: 0.300
+points for N: 166 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -167
+[]
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.540[r]
+points for N: 167 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.480
+gamma -85
+[]
+Time: 1.740
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 85*K.1
+[]
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.830
+points for N: 170 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -173
+[]
+Time: 2.020
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 173
+[]
+Time: 1.430
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.870
+points for N: 173 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.490
+gamma -87
+[]
+Time: 0.310
+points for N: 174 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.330
+gamma -177
+[]
+Time: 3.640
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -177
+[]
+Time: 301.300
+rank 2
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.500[r]
+gamma -K.1
+[]
+Time: 0.570
+points for N: 177 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -89
+[]
+Time: 5.220
+rank 2
+gamma 89*K.1
+[]
+Time: 1.500
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9 + $.10 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.140
+[]
+Time: 0.580
+gamma -K.1
+[]
+Time: 0.460
+points for N: 178 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -179
+[]
+Time: 1.900
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 179
+[]
+Time: 1.610
+$.1 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.500
+gamma -K.1 + 2
+[]
+Time: 0.770
+points for N: 179 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.410
+gamma -181
+[]
+Time: 2.180
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 181
+[]
+Time: 1.480
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.700
+gamma -K.1 + 2
+[]
+Time: 0.610
+points for N: 181 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -K.1
+[]
+Time: 0.620
+gamma -91
+[]
+Time: 1.930
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -91*K.1
+[]
+Time: 2.990
+points for N: 182 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -K.1 + 2
+[]
+Time: 0.610
+gamma -183
+[]
+Time: 3.820
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 183
+[]
+Time: 2.610
+points for N: 183 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -185
+[]
+Time: 4.990
+$.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 185
+[]
+Time: 4.700
+$.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.780
+gamma -K.1 + 2
+[]
+Time: 0.540
+points for N: 185 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -93
+[]
+Time: 1.550
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -93*K.1
+[]
+Time: 80.210
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.530
+gamma -K.1
+[]
+Time: 0.510
+points for N: 186 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -K.1 + 2
+[]
+Time: 0.600
+gamma -187
+[]
+Time: 1.990
+points for N: 187 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -K.1
+[]
+Time: 0.480
+gamma -95
+[]
+Time: 6.310
+rank 2
+gamma -95*K.1
+[]
+Time: 1.550
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.480
+points for N: 190 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.590
+gamma -191
+[]
+Time: 2.960
+gamma -10*K.1 + 13
+[]
+Time: 1.810
+$.8 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -191
+[]
+Time: 133.990
+$.8 + $.11
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma -10*K.1 + 13
+finding points
+Time: 0.100
+[]
+Time: 1.650
+gamma -K.1
+[]
+Time: 0.600
+gamma -13*K.1 - 10
+[]
+Time: 2.040
+points for N: 191 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -193
+[]
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.840
+points for N: 193 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -97
+[]
+Time: 0.360
+gamma -K.1
+[]
+Time: 0.480
+points for N: 194 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.440
+gamma -195
+[]
+Time: 1.460[r]
+$.1 + $.2 + $.4 + $.6 + $.7 + $.8 + $.9 + $.10 + $.11 + $.14 + $.15 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 195
+[]
+Time: 163.780
+gamma -K.1
+[]
+Time: 0.520
+points for N: 195 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -197
+[]
+Time: 1.920
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 197
+[]
+Time: 1.620
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.150
+[]
+Time: 0.610
+gamma -K.1 + 2
+[]
+Time: 0.570
+points for N: 197 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -K.1
+[]
+Time: 0.600
+gamma -199
+[]
+Time: 0.290
+points for N: 199 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.350
+gamma -201
+[]
+Time: 13.250
+rank 2
+gamma -201
+[]
+Time: 129.520
+$.1 + $.2 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.520
+points for N: 201 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.480
+gamma -101
+[]
+Time: 2.030
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 101*K.1
+[]
+Time: 2.800
+gamma -K.1
+[]
+Time: 0.510
+points for N: 202 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.480
+gamma -K.1 + 2
+[]
+Time: 0.810
+gamma -203
+[]
+Time: 2.240
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 203
+[]
+Time: 149.090
+points for N: 203 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -205*K.1
+[]
+Time: 51.070
+rank 2
+gamma 25*K.1 - 20
+[]
+Time: 25.600
+rank 2
+gamma -41*K.1
+finding points
+Time: 0.110
+[]
+Time: 2.380
+rank 2
+gamma 5*K.1 - 4
+finding points
+Time: 0.140
+[]
+Time: 13.650
+rank 2
+=============================== failed ======================
+205 $.2 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12
+gamma -205
+[]
+Time: 1.820
+$.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 205
+[]
+Time: 125.180
+gamma -5
+[]
+Time: 0.670
+gamma -41
+[]
+Time: 2.280
+rank 2
+gamma 4*K.1 + 5
+[]
+Time: 13.320
+rank 2
+gamma 205
+finding points
+Time: 0.100
+[]
+Time: 46.450
+rank 2
+gamma -20*K.1 - 25
+finding points
+Time: 0.100
+[]
+Time: 23.310
+rank 2
+=============================== failed ======================
+205 $.2 + $.5 + $.8 + $.16
+gamma -41*K.1
+[]
+Time: 4.320
+gamma -K.1
+[]
+Time: 0.480
+points for N: 205 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -103
+[]
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.520
+points for N: 206 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1 + 2
+[]
+Time: 0.490
+gamma -209
+[]
+Time: 12.940
+rank 2
+gamma -209
+[]
+Time: 2.330
+points for N: 209 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -105
+[]
+Time: 0.410
+gamma -K.1
+[]
+Time: 0.510[r]
+points for N: 210 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.310
+gamma -211
+[]
+Time: 1.620
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 211
+[]
+Time: 1.530
+$.1 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.720
+gamma -K.1
+[]
+Time: 0.510
+points for N: 211 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -213
+[]
+Time: 1.470
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -213
+[]
+Time: 1.790
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.500
+gamma -K.1
+[]
+Time: 0.480
+points for N: 213 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -K.1
+[]
+Time: 0.510
+gamma -107
+[]
+Time: 1.780
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -107*K.1
+[]
+Time: 0.250
+points for N: 214 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -215
+[]
+Time: 0.290
+points for N: 215 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.710
+gamma -217
+[]
+Time: 2.990
+gamma -2*K.1 - 14
+[ <2, 24> ]
+Time: 1.140
+rank 2
+gamma -62*K.1 + 62
+[ <2, 24> ]
+Time: 15.370
+rank 3
+gamma 14*K.1 + 98
+finding points
+Time: 0.100
+[ <2, 24> ]
+Time: 2.030
+rank 2
+gamma 434*K.1 - 434
+finding points
+Time: 0.090
+[ <2, 24> ]
+Time: 1532.430
+rank 3
+=============================== failed ======================
+217 $.2 + $.8 + $.12 + $.14
+gamma -K.1 + 2
+[]
+Time: 0.670
+gamma -126*K.1 + 266
+[ <2, 24> ]
+Time: 2.090
+rank 2
+gamma 434*K.1 + 434
+[ <2, 24> ]
+Time: 1610.490
+rank 3
+gamma -18*K.1 + 38
+finding points
+Time: 0.100
+[ <2, 24> ]
+Time: 1.100[r]
+rank 2
+gamma 62*K.1 + 62
+finding points
+Time: 0.090
+[ <2, 24> ]
+Time: 14.670
+rank 3
+=============================== failed ======================
+217 $.2 + $.4 + $.6 + $.8 + $.9 + $.10 + $.11 + $.13 + $.14
+points for N: 217 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -109
+[]
+Time: 1.540
+$.1 + $.3 + $.4 + $.5 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -3*K.1 + 10
+[]
+Time: 16.040
+rank 2
+gamma 218
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 4.650
+$.1 + $.3 + $.4 + $.5 + $.11
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 6*K.1 - 20
+finding points
+Time: 0.080
+[ <2, 12> ]
+Time: 4.250
+rank 2
+=============================== failed ======================
+218 $.1 + $.3 + $.4 + $.5 + $.11
+gamma -109*K.1
+[]
+Time: 4.200
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 3*K.1 - 10
+[]
+Time: 4.480
+rank 2
+gamma -218*K.1
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 1.550
+$.1 + $.4 + $.5 + $.8
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 6*K.1 - 20
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 4.310
+rank 2
+=============================== failed ======================
+218 $.1 + $.4 + $.5 + $.8
+gamma -K.1
+[]
+Time: 0.510
+gamma -109
+[]
+Time: 1.630
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 109*K.1
+[]
+Time: 97.380
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.670
+points for N: 218 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+Time: 0.560
+gamma -K.1
+[]
+Time: 0.480
+gamma -219
+[]
+Time: 1.440
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 219
+[]
+Time: 1.460
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.530[r]
+points for N: 219 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.440
+gamma -K.1
+[]
+Time: 0.530[r]
+gamma -221
+[]
+Time: 1.750
+$.1 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 221
+[]
+Time: 166.120
+points for N: 221 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -K.1 + 2
+[]
+Time: 0.520
+gamma -111
+[]
+Time: 1.410
+points for N: 222 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -223
+[]
+Time: 5.010[r]
+$.1 + $.4 + $.5 + $.8 + $.9 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 223
+[]
+Time: 2.930
+gamma -K.1
+[]
+Time: 0.760
+points for N: 223 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -113
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.480
+points for N: 226 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -227
+[]
+Time: 2.030
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 227
+[]
+Time: 1.480
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.640
+gamma -K.1 + 2
+[]
+Time: 0.840
+points for N: 227 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -229
+[]
+Time: 2.220[r]
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 229
+[]
+Time: 1.390
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.460
+gamma -K.1 + 2
+[]
+Time: 0.490
+points for N: 229 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1 + 2
+[]
+Time: 0.710
+gamma -115
+[]
+Time: 1.210
+points for N: 230 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -231
+[]
+Time: 20.460
+rank 2
+gamma -231
+[]
+Time: 2.170
+gamma -K.1
+[]
+Time: 0.490
+points for N: 231 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.610
+gamma -K.1
+[]
+Time: 0.480[r]
+gamma -233
+[]
+Time: 3.020
+points for N: 233 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.470
+gamma -K.1 + 2
+[]
+Time: 0.800
+gamma -235
+[]
+Time: 1.670
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 235
+[]
+Time: 1.430
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.460
+points for N: 235 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -237
+[]
+Time: 1.350
+$.1 + $.2 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -237
+[]
+Time: 1.320
+$.1 + $.2 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.740
+gamma -K.1 + 2
+[]
+Time: 0.680
+points for N: 237 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.470
+gamma -119
+[]
+Time: 0.340
+gamma -K.1 + 2
+[]
+Time: 0.420
+points for N: 238 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -239
+[]
+Time: 2.150
+gamma -12*K.1 + 5
+[]
+Time: 0.940
+gamma -K.1
+[]
+Time: 0.630
+gamma -5*K.1 - 12
+[]
+Time: 3.550
+$.3 + $.4 + $.7 + $.9 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 239*K.1
+[]
+Time: 9.140
+$.3 + $.4 + $.7 + $.9 + $.11
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 5*K.1 + 12
+finding points
+Time: 0.080
+[]
+Time: 0.690
+points for N: 239 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -241
+[]
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.480[r]
+points for N: 241 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -123
+[]
+Time: 1.460
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -123*K.1
+[]
+Time: 2.610
+points for N: 246 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.480
+gamma -13*K.1
+[]
+Time: 1.380
+gamma -19
+[]
+Time: 0.730
+gamma -K.1
+[]
+Time: 0.460
+gamma -247
+[]
+Time: 0.330
+points for N: 247 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.350
+gamma -249
+[]
+Time: 1.630
+gamma -K.1 + 2
+[]
+Time: 0.800
+points for N: 249 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.310
+gamma -251
+[]
+Time: 1.670
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 251
+[]
+Time: 1.640
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.700[r]
+gamma -K.1
+[]
+Time: 0.690
+points for N: 251 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -253
+[]
+Time: 1.680
+$.1 + $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -253
+[]
+Time: 1.540
+$.1 + $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.450
+gamma -K.1
+[]
+Time: 0.800
+points for N: 253 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -127
+[]
+Time: 4.730
+$.1 + $.2 + $.5 + $.8 + $.9 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -127*K.1
+[]
+Time: 4.600
+$.1 + $.2 + $.5 + $.8 + $.9 + $.11
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.160
+[]
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.420
+points for N: 254 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -255
+[]
+Time: 16.540
+rank 2
+gamma 255
+[]
+Time: 533.920
+rank 2
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.460
+gamma -K.1
+[]
+Time: 0.480
+points for N: 255 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -K.1
+[]
+Time: 0.660
+gamma -257
+[]
+Time: 0.330
+points for N: 257 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.690
+gamma -129
+[]
+Time: 7.120
+rank 2
+gamma -129*K.1
+[]
+Time: 88.830
+points for N: 258 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -K.1
+[]
+Time: 0.500
+gamma -259
+[]
+Time: 1.860
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 259
+[]
+Time: 2.400
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.680
+points for N: 259 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.470
+gamma -131
+[]
+Time: 1.220
+points for N: 262 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -263
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.490
+points for N: 263 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.410
+gamma -265
+[]
+Time: 4.820
+$.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 265
+[]
+Time: 1.810
+gamma -K.1 + 2
+[]
+Time: 0.480[r]
+points for N: 265 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -133
+[]
+Time: 1.680
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -133*K.1
+[]
+Time: 0.270
+gamma -K.1
+[]
+Time: 0.460
+points for N: 266 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -267
+[]
+Time: 2.610
+gamma -K.1
+[]
+Time: 0.470[r]
+points for N: 267 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -269
+[]
+Time: 1.820
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 269
+[]
+Time: 1.440
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.480
+gamma -K.1
+[]
+Time: 0.780
+points for N: 269 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.610
+gamma 3*K.1 - 20
+[]
+Time: 1.460
+gamma -271
+[]
+Time: 4.270
+gamma -K.1 + 2
+[]
+Time: 0.480
+gamma -14*K.1 + 25
+[]
+Time: 0.650
+points for N: 271 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -273
+[]
+Time: 91.790
+rank 2
+gamma -273
+[]
+Time: 2.260
+gamma -K.1
+[]
+Time: 0.470
+points for N: 273 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -137*K.1
+[]
+Time: 6.680
+gamma -137
+[]
+Time: 2.260
+gamma -K.1
+[]
+Time: 0.490
+gamma -1
+[]
+Time: 0.250
+points for N: 274 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -277
+[]
+Time: 1.720
+$.1 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 277
+[]
+Time: 1.430
+$.1 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.690
+gamma -K.1 + 2
+[]
+Time: 0.490[r]
+points for N: 277 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.280
+gamma -K.1
+[]
+Time: 0.490
+gamma -139
+[]
+Time: 1.710
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -139*K.1
+[]
+Time: 0.250
+points for N: 278 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -K.1
+[]
+Time: 0.510
+gamma -281
+[]
+Time: 2.910
+points for N: 281 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -141
+[]
+Time: 3.120
+gamma -K.1
+[]
+Time: 0.440
+points for N: 282 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -283
+[]
+Time: 1.610
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 283
+[]
+Time: 2.020
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.640
+gamma -K.1 + 2
+[]
+Time: 0.510
+points for N: 283 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1 + 2
+[]
+Time: 0.430
+gamma -285
+[]
+Time: 2.950
+points for N: 285 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -143
+[]
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.410
+points for N: 286 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -287
+[]
+Time: 5.350
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.14 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 287
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.490
+points for N: 287 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -145
+[]
+Time: 2.630[r]
+gamma -145*K.1
+[]
+Time: 1280.430
+rank 3
+gamma 9*K.1 - 8
+[]
+Time: 10.980
+gamma -145
+[]
+Time: 2.630
+gamma -K.1
+[]
+Time: 0.560
+points for N: 290 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.590
+gamma -291
+[]
+Time: 1.470
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.9 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 291
+[]
+Time: 157.880
+points for N: 291 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -293
+[]
+Time: 1.740
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 293
+[]
+Time: 1.400
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.440
+gamma -K.1 + 2
+[]
+Time: 0.480
+points for N: 293 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1 + 2
+[]
+Time: 0.450
+gamma -295
+[]
+Time: 2.580
+points for N: 295 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -149
+[]
+Time: 1.550
+$.1 + $.3 + $.4 + $.6 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -7*K.1 - 10
+[]
+Time: 3.140
+$.1 + $.3 + $.4 + $.6 + $.11
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 298
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 5.710
+$.1 + $.3 + $.4 + $.6 + $.11
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 14*K.1 + 20
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 3.200
+$.1 + $.3 + $.4 + $.6 + $.11
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+=============================== failed ======================
+298 $.1 + $.3 + $.4 + $.6 + $.11
+gamma -149*K.1
+[]
+Time: 5.200
+$.1 + $.4 + $.6 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 7*K.1 + 10
+[]
+Time: 3.200
+$.1 + $.4 + $.6 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma -298*K.1
+finding points
+Time: 0.080
+[ <2, 12> ]
+Time: 1.540
+$.1 + $.4 + $.6 + $.8
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 14*K.1 + 20
+finding points
+Time: 0.080
+[ <2, 12> ]
+Time: 3.210
+$.1 + $.4 + $.6 + $.8
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+=============================== failed ======================
+298 $.1 + $.4 + $.6 + $.8
+gamma -K.1
+[]
+Time: 0.500
+gamma -149
+[]
+Time: 1.680
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 149*K.1
+[]
+Time: 4.350
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.120
+[]
+Time: 0.460
+points for N: 298 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+Time: 0.460
+gamma -299
+[]
+Time: 1.960
+$.1 + $.2 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 299
+[]
+Time: 1.380
+$.1 + $.2 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.530
+gamma -K.1 + 2
+[]
+Time: 0.500
+points for N: 299 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -301
+[]
+Time: 1.920
+$.2 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -301
+[]
+Time: 166.860
+gamma -K.1 + 2
+[]
+Time: 0.490
+points for N: 301 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -151
+[]
+Time: 0.290
+gamma -K.1
+[]
+Time: 0.440[r]
+points for N: 302 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -K.1 + 2
+[]
+Time: 0.480
+gamma -303
+[]
+Time: 0.280
+gamma -101*K.1 + 202
+[]
+Time: 2.650
+gamma -3
+[]
+Time: 0.550
+points for N: 303 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -305
+[]
+Time: 3.570
+gamma -K.1
+[]
+Time: 0.490
+points for N: 305 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.280
+gamma -307
+[]
+Time: 1.730
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 307
+[]
+Time: 1.660
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.470
+gamma -K.1
+[]
+Time: 0.460
+points for N: 307 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -309
+[]
+Time: 1.380
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -309
+[]
+Time: 178.200
+gamma -K.1 + 2
+[]
+Time: 0.810
+points for N: 309 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -K.1 + 2
+[]
+Time: 0.470
+gamma -155
+[]
+Time: 5.930
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -155*K.1
+[]
+Time: 9.790
+points for N: 310 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -K.1
+[]
+Time: 0.500[r]
+gamma -311
+[]
+Time: 0.290
+points for N: 311 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.620
+gamma -313
+[]
+Time: 2.700
+gamma -K.1
+[]
+Time: 0.440[r]
+points for N: 313 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -K.1 + 2
+[]
+Time: 0.480
+gamma -157
+[]
+Time: 2.060
+$.2 + $.3 + $.6 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -11*K.1 - 6
+[]
+Time: 1.210
+gamma -157*K.1 + 314
+[]
+Time: 2.820
+gamma -157
+[]
+Time: 1.780
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 157*K.1
+[]
+Time: 1.630
+points for N: 314 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -317
+[]
+Time: 1.900
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 317
+[]
+Time: 1.370
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.460
+gamma -K.1
+[]
+Time: 0.470
+points for N: 317 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.450
+gamma -159
+[]
+Time: 0.300
+points for N: 318 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.440
+gamma -11
+[]
+Time: 0.610
+gamma -319
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.470
+gamma -29*K.1
+[]
+Time: 3.820
+$.2 + $.3 + $.5 + $.6 + $.7 + $.10 + $.11 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -29*K.1
+[]
+Time: 20.760
+rank 2
+gamma -11*K.1
+finding points
+Time: 0.090
+[]
+Time: 0.690
+points for N: 319 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -321
+[]
+Time: 1.320
+gamma -K.1 + 2
+[]
+Time: 0.500
+points for N: 321 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -161
+[]
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.490[r]
+points for N: 322 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -K.1
+[]
+Time: 0.470
+gamma -323
+[]
+Time: 4.090
+points for N: 323 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.280
+gamma -K.1
+[]
+Time: 0.480
+gamma -163
+[]
+Time: 1.750[r]
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -163*K.1
+[]
+Time: 0.250
+points for N: 326 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -K.1 + 2
+[]
+Time: 0.520
+gamma -327
+[]
+Time: 3.740
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 327
+[]
+Time: 1.940
+points for N: 327 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -329
+[]
+Time: 2.850
+gamma -K.1
+[]
+Time: 0.480
+points for N: 329 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.370
+gamma -165
+[]
+Time: 1.270
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.11 + $.13 + $.14 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -165*K.1
+[]
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.470[r]
+points for N: 330 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -331
+[]
+Time: 1.760
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 331
+[]
+Time: 1.660
+$.1 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.460
+gamma -K.1 + 2
+[]
+Time: 0.480[r]
+points for N: 331 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -167
+[]
+Time: 0.300
+gamma -K.1 + 2
+[]
+Time: 0.430
+points for N: 334 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -K.1 + 2
+[]
+Time: 0.490
+gamma -335
+[]
+Time: 0.340
+points for N: 335 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.620
+gamma 674*K.1 - 2022
+[ <2, 24> ]
+Time: 195.030
+rank 3
+gamma 674*K.1 + 674
+[ <2, 24> ]
+Time: 16557.530
+rank 3
+gamma -2*K.1 + 6
+finding points
+Time: 0.180
+[ <2, 24> ]
+Time: 0.500
+gamma -2*K.1 + 2
+[ <2, 24> ]
+Time: 0.580
+gamma -K.1 + 2
+[]
+Time: 0.610
+gamma -337
+[]
+Time: 90.120
+rank 2
+gamma 337
+[]
+Time: 2755.130
+rank 2
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.460
+points for N: 337 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+Time: 0.650
+gamma -339
+[]
+Time: 1.460
+$.1 + $.2 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 339
+[]
+Time: 1.580
+$.1 + $.2 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.460
+gamma -K.1 + 2
+[]
+Time: 0.520
+points for N: 339 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -341
+[]
+Time: 1.870
+$.2 + $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -341
+[]
+Time: 1.440
+$.2 + $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.700
+gamma -K.1 + 2
+[]
+Time: 0.520
+gamma -4*K.1 + 3
+[]
+Time: 0.620
+gamma 55*K.1 - 154
+[]
+Time: 1.610
+$.3 + $.8 + $.9 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -341*K.1
+[]
+Time: 227.840
+$.3 + $.8 + $.9 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma -5*K.1 + 14
+finding points
+Time: 0.100
+[]
+Time: 0.660
+points for N: 341 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.610
+gamma -345
+[]
+Time: 0.350
+gamma -K.1
+[]
+Time: 0.500
+points for N: 345 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -173
+[]
+Time: 1.600
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 173*K.1
+[]
+Time: 2.470
+gamma -K.1
+[]
+Time: 0.460
+points for N: 346 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -347
+[]
+Time: 1.980
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 347
+[]
+Time: 1.540
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.510
+gamma -K.1
+[]
+Time: 0.530
+points for N: 347 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.360
+gamma -349
+[]
+Time: 2.320
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 349
+[]
+Time: 1.470
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.500
+gamma -K.1 + 2
+[]
+Time: 0.530
+points for N: 349 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.630
+gamma -353
+[]
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.510
+points for N: 353 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1
+[]
+Time: 0.470
+gamma -177
+[]
+Time: 3.460
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -177*K.1
+[]
+Time: 1.540
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.530
+points for N: 354 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -K.1
+[]
+Time: 0.480[r]
+gamma -355
+[]
+Time: 1.750
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 355
+[]
+Time: 1.590
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.560
+points for N: 355 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.470
+gamma -357
+[]
+Time: 4.870
+gamma -K.1 + 2
+[]
+Time: 0.800
+points for N: 357 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.330
+gamma -K.1
+[]
+Time: 0.440
+gamma -179
+[]
+Time: 1.760
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -179*K.1
+[]
+Time: 0.230
+points for N: 358 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.590
+gamma -359
+[]
+Time: 0.340
+gamma -K.1 + 2
+[]
+Time: 0.810
+points for N: 359 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -181
+[]
+Time: 2.050
+$.1 + $.3 + $.4 + $.5 + $.11
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -9*K.1 + 10
+[]
+Time: 12.650
+rank 2
+gamma 362
+finding points
+Time: 0.080
+[ <2, 12> ]
+Time: 4.580
+$.1 + $.3 + $.4 + $.5 + $.11
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 18*K.1 - 20
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 12.270
+rank 2
+=============================== failed ======================
+362 $.1 + $.3 + $.4 + $.5 + $.11
+gamma -181*K.1
+[]
+Time: 4.820
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 9*K.1 - 10
+[]
+Time: 4.280
+rank 2
+gamma -362*K.1
+finding points
+Time: 0.090
+[ <2, 12> ]
+Time: 1.920
+$.1 + $.4 + $.5 + $.8
+$.1^4 - K.1*$.1^3 + $.1^2 - K.1*$.1
+false false
+gamma 18*K.1 - 20
+finding points
+Time: 0.100
+[ <2, 12> ]
+Time: 12.660
+rank 2
+=============================== failed ======================
+362 $.1 + $.4 + $.5 + $.8
+gamma -K.1
+[]
+Time: 0.520
+gamma -181
+[]
+Time: 2.010
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 181*K.1
+[]
+Time: 166.900
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.690
+points for N: 362 {@ (0 : 0 : 1), (1 : 0 : 0) @}
+Time: 0.590
+gamma -365
+[]
+Time: 6.450
+gamma -K.1
+[]
+Time: 0.470
+points for N: 365 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -K.1
+[]
+Time: 0.530
+gamma -183
+[]
+Time: 3.600
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -183*K.1
+[]
+Time: 1.460
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.14
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.430
+points for N: 366 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -367
+[]
+Time: 3.130
+gamma -K.1
+[]
+Time: 0.550
+points for N: 367 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -185
+[]
+Time: 5.270
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 185*K.1
+[]
+Time: 7.100
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.470
+gamma -K.1 + 2
+[]
+Time: 0.540
+points for N: 370 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.620
+gamma -K.1
+[]
+Time: 0.530
+gamma -371
+[]
+Time: 1.800
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 371
+[]
+Time: 1.760
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.760
+points for N: 371 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.620
+gamma -373
+[]
+Time: 2.050
+$.2 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 373
+[]
+Time: 1.610
+$.2 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.480
+gamma -K.1
+[]
+Time: 0.490
+points for N: 373 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.490
+gamma -K.1 + 2
+[]
+Time: 0.530
+gamma -187
+[]
+Time: 2.320
+points for N: 374 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.450
+gamma -K.1 + 2
+[]
+Time: 0.540
+gamma -377
+[]
+Time: 3.560
+points for N: 377 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.300
+gamma -379
+[]
+Time: 2.180
+$.2 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 379
+[]
+Time: 1.890
+$.2 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.670
+gamma -K.1 + 2
+[]
+Time: 0.680
+points for N: 379 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -381
+[]
+Time: 1.390
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -381
+[]
+Time: 1.570
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.510[r]
+gamma -K.1
+[]
+Time: 0.470
+points for N: 381 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.600
+gamma -191
+[]
+Time: 2.810
+gamma -K.1
+[]
+Time: 0.890
+points for N: 382 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.680
+gamma -383
+[]
+Time: 3.190
+gamma -K.1
+[]
+Time: 0.470
+points for N: 383 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1 + 2
+[]
+Time: 0.560
+gamma -385
+[]
+Time: 2.880
+points for N: 385 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.590
+gamma -193
+[]
+Time: 0.320
+gamma -K.1
+[]
+Time: 0.470
+points for N: 386 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -389
+[]
+Time: 1.970
+$.2 + $.5 + $.7 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 389
+[]
+Time: 1.360
+$.2 + $.5 + $.7 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.530
+gamma -K.1
+[]
+Time: 0.520
+points for N: 389 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -K.1
+[]
+Time: 0.730
+gamma -195
+[]
+Time: 1.410
+$.1 + $.2 + $.3 + $.4 + $.7 + $.8 + $.9 + $.10 + $.11 + $.14 + $.15 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -195*K.1
+[]
+Time: 4.530
+points for N: 390 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -17*K.1 - 68
+[]
+Time: 9.660
+rank 3
+gamma 23*K.1 - 92
+[]
+Time: 81.510
+rank 2
+gamma 17*K.1 + 68
+finding points
+Time: 0.110
+[]
+Time: 5.350
+rank 2
+gamma -23*K.1 + 92
+finding points
+Time: 0.090
+[]
+Time: 86.850
+gamma -68*K.1 + 17
+[]
+Time: 5.590
+rank 2
+gamma -92*K.1 + 23
+[]
+Time: 80.370
+gamma -17*K.1 - 68
+[]
+Time: 12.820
+rank 3
+gamma -23*K.1 - 92
+[]
+Time: 76.580
+rank 2
+gamma 17*K.1 + 68
+finding points
+Time: 0.120
+[]
+Time: 6.030
+rank 2
+gamma 23*K.1 + 92
+finding points
+Time: 0.110
+[]
+Time: 81.860
+gamma -68*K.1 + 17
+[]
+Time: 5.840
+rank 2
+gamma -92*K.1 - 23
+[]
+Time: 84.040
+gamma -K.1
+[]
+Time: 0.520
+gamma -391
+[]
+Time: 0.410
+points for N: 391 {@ (0 : 0 : 1), (1 : 0 : 0), (1/4 : -391/32 : 1), (1/4 :
+391/32 : 1), (-4 : -782 : 1), (-4 : 782 : 1) @}
+====================== extra points!!! ====================
+Time: 0.350
+gamma -393
+[]
+Time: 3.600
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -393
+[]
+Time: 6.780
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.520
+gamma -K.1
+[]
+Time: 0.480
+points for N: 393 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -K.1 + 2
+[]
+Time: 0.710
+gamma -197
+[]
+Time: 1.940
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 197*K.1
+[]
+Time: 5.180
+$.1 + $.2 + $.4 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.140
+[]
+Time: 0.510
+points for N: 394 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -K.1 - 8
+[]
+Time: 1.850
+rank 2
+gamma 79*K.1
+[]
+Time: 92.960
+$.3 + $.5 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 5*K.1 + 40
+finding points
+Time: 0.080
+[]
+Time: 2.760
+rank 2
+gamma -395*K.1
+finding points
+Time: 0.110
+[]
+Time: 4.970
+$.3 + $.5 + $.12
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+=============================== failed ======================
+395 $.3 + $.5 + $.12
+gamma -K.1
+[]
+Time: 0.530[r]
+gamma -40*K.1 + 5
+[]
+Time: 2.630
+rank 2
+gamma -395
+[]
+Time: 4.970
+$.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma -8*K.1 + 1
+finding points
+Time: 0.090
+[]
+Time: 1.470
+rank 2
+gamma -79
+finding points
+Time: 0.080
+[]
+Time: 96.580
+$.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+$.1^4 + (-K.1 - 2)*$.1^3 + (2*K.1 - 1)*$.1^2 + K.1*$.1
+false false
+=============================== failed ======================
+395 $.3 + $.4 + $.6 + $.8 + $.10 + $.11 + $.13
+gamma -395
+[]
+Time: 8.750
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 395
+[]
+Time: 5.470
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.510
+points for N: 395 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.340
+gamma -397
+[]
+Time: 1.830
+$.1 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 397
+[]
+Time: 1.420
+$.1 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.130
+[]
+Time: 0.510
+gamma -K.1 + 2
+[]
+Time: 0.480
+points for N: 397 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.520
+gamma -199
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.510
+points for N: 398 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.390
+gamma -K.1
+[]
+Time: 0.550
+gamma -399
+[]
+Time: 4.040
+$.1 + $.3 + $.4 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14 + $.15 + $.17
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -399
+[]
+Time: 2.400
+points for N: 399 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.680
+gamma -401
+[]
+Time: 0.350
+gamma -K.1 + 2
+[]
+Time: 0.540
+points for N: 401 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.330
+gamma -K.1 + 2
+[]
+Time: 0.440
+gamma -201
+[]
+Time: 14.330
+rank 2
+gamma -201*K.1
+[]
+Time: 144.540
+points for N: 402 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -K.1
+[]
+Time: 0.560
+gamma -403
+[]
+Time: 7.190
+points for N: 403 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -K.1
+[]
+Time: 0.530
+gamma -203
+[]
+Time: 2.280
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 203*K.1
+[]
+Time: 6.080
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.120
+[]
+Time: 0.720
+points for N: 406 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.520
+gamma -407
+[]
+Time: 10.590
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.9 + $.11 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 407
+[]
+Time: 3.060
+gamma -K.1
+[]
+Time: 0.510
+points for N: 407 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.650
+gamma -818*K.1 + 818
+[ <2, 24> ]
+Time: 14.550
+gamma -409
+[]
+Time: 10.720
+$.1 + $.5 + $.6 + $.9 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 409
+[]
+Time: 2.500
+gamma 818*K.1 - 2454
+[ <2, 24> ]
+Time: 1.820
+$.3 + $.4 + $.5 + $.7 + $.8 + $.10
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 34*K.1 - 46
+[ <2, 24> ]
+Time: 22.460
+gamma -K.1 + 2
+[]
+Time: 0.440
+points for N: 409 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.520
+gamma -5
+[]
+Time: 0.610
+gamma -205
+[]
+Time: 1.790
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 205*K.1
+[]
+Time: 4.070
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.12 + $.13 + $.14
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 2
+finding points
+Time: 0.130
+[]
+Time: 0.520
+gamma -K.1
+[]
+Time: 0.870
+gamma -41*K.1
+[]
+Time: 4.100
+points for N: 410 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.560
+gamma -K.1 + 2
+[]
+Time: 0.540
+gamma -411
+[]
+Time: 7.290
+points for N: 411 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.350
+gamma -413
+[]
+Time: 1.940
+$.2 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -413
+[]
+Time: 1.840
+$.2 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.470
+gamma -K.1
+[]
+Time: 0.490[r]
+points for N: 413 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.420
+gamma -415
+[]
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.490
+points for N: 415 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.320
+gamma -417
+[]
+Time: 3.490
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -417
+[]
+Time: 252.560
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.13
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.550
+gamma -K.1 + 2
+[]
+Time: 0.530
+points for N: 417 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -209
+[]
+Time: 13.130
+rank 2
+gamma -209*K.1
+[]
+Time: 131.250
+gamma -K.1
+[]
+Time: 0.470
+points for N: 418 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -419
+[]
+Time: 7.470
+gamma -K.1
+[]
+Time: 0.490
+points for N: 419 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.570
+gamma -421
+[]
+Time: 2.070
+$.1 + $.5 + $.6 + $.9
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 421
+[]
+Time: 1.480
+$.1 + $.5 + $.6 + $.9
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.660
+gamma -K.1
+[]
+Time: 0.440
+points for N: 421 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.290
+gamma -K.1 + 2
+[]
+Time: 0.500
+gamma -211
+[]
+Time: 1.680
+$.1 + $.2 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -211*K.1
+[]
+Time: 0.270
+points for N: 422 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.520
+gamma -213
+[]
+Time: 1.300
+$.1 + $.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -213*K.1
+[]
+Time: 0.300
+gamma -K.1
+[]
+Time: 0.550
+points for N: 426 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.400
+gamma -K.1 + 2
+[]
+Time: 0.460
+gamma -427
+[]
+Time: 2.170
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 427
+[]
+Time: 1.450
+$.2 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.520
+points for N: 427 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.510
+gamma -33
+[]
+Time: 1.380
+rank 2
+gamma -33
+[]
+Time: 1.540
+gamma -429
+[]
+Time: 1.460
+$.1 + $.2 + $.4 + $.7 + $.8 + $.9 + $.11 + $.13 + $.14 + $.16
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -429
+[]
+Time: 1.740
+$.1 + $.2 + $.4 + $.7 + $.8 + $.9 + $.11 + $.13 + $.14 + $.16
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.140
+[]
+Time: 0.550
+gamma -K.1
+[]
+Time: 0.550
+gamma -13*K.1
+[]
+Time: 1.690
+points for N: 429 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.380
+gamma -K.1 + 2
+[]
+Time: 0.460
+gamma -215
+[]
+Time: 0.300
+points for N: 430 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.580
+gamma -431
+[]
+Time: 2.880[r]
+gamma -K.1 + 2
+[]
+Time: 0.470
+points for N: 431 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.630
+gamma -433
+[]
+Time: 0.310
+gamma -K.1
+[]
+Time: 0.470
+points for N: 433 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.540
+gamma -217
+[]
+Time: 2.620
+gamma -K.1 + 2
+[]
+Time: 0.670
+points for N: 434 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.550
+gamma -435
+[]
+Time: 8.450
+gamma -K.1
+[]
+Time: 0.490
+gamma -145*K.1
+[]
+Time: 1449.790
+rank 3
+gamma -145*K.1
+[]
+Time: 7.790
+$.1 + $.3 + $.4 + $.5 + $.6 + $.7 + $.8 + $.9 + $.10 + $.13 + $.14 + $.15
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma -3*K.1
+finding points
+Time: 0.110
+[]
+Time: 0.570
+gamma -3
+[]
+Time: 0.550
+points for N: 435 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.500
+gamma -437
+[]
+Time: 1.860
+$.1 + $.3 + $.4 + $.6 + $.7 + $.10 + $.11 + $.12
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -437
+[]
+Time: 263.680
+gamma -K.1
+[]
+Time: 0.800
+points for N: 437 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.590
+gamma -K.1
+[]
+Time: 0.490
+gamma -219
+[]
+Time: 1.400
+$.1 + $.2 + $.3 + $.4 + $.6 + $.7 + $.8 + $.11 + $.12 + $.13
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma -219*K.1
+[]
+Time: 1.700
+points for N: 438 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.620
+gamma -439
+[]
+Time: 0.280
+gamma -K.1 + 2
+[]
+Time: 0.420
+points for N: 439 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.460
+gamma -221
+[]
+Time: 2.830
+gamma -K.1 + 2
+[]
+Time: 0.820
+points for N: 442 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.280
+gamma -443
+[]
+Time: 1.700
+$.1 + $.4 + $.5 + $.8
+$.1^3 - K.1*$.1^2 + $.1 - K.1
+false false
+gamma 443
+[]
+Time: 1.500
+$.1 + $.4 + $.5 + $.8
+$.1^3 + (-K.1 - 2)*$.1^2 + (2*K.1 - 1)*$.1 + K.1
+false false
+gamma 1
+finding points
+Time: 0.120
+[]
+Time: 0.490
+gamma -K.1
+[]
+Time: 0.500
+points for N: 443 {@ (1 : 0 : 0), (0 : 0 : 1) @}
+Time: 0.530
+gamma -445
+[]
