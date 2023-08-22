@@ -73,7 +73,7 @@ def cli_handler(args):
     lower_bound, upper_bound = quadratic_torsion_groups(d)
     unknown = sorted(upper_bound - lower_bound)
     known = sorted(lower_bound - set(RATIONAL_TORSION_GROUPS))
-    logging.info(f"superset = {upper_bound}")
+    logging.info(f"Superset = {upper_bound}")
 
     logging.info(f"Certified new torsion groups = {known}")
 
