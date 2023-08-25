@@ -25,7 +25,7 @@ extra_point_list := [* *];
 unsolved := [];
 for d in nonempty_selmer do
   C:=HyperellipticCurve(d*f);
-  points := Points(C: Bound:=100000);
+  points := Points(C: Bound:=10000);
   if #points gt 0 then
     print "====", d, #points, "====";
     print points;
