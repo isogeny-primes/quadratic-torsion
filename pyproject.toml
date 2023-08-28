@@ -8,7 +8,7 @@ readme = "README.md"
 packages = [{include = "quadratic_torsion"}]
 
 [tool.poetry.dependencies]
-python = "^3.11"
+python = "^3.10"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.7.0"
