@@ -8,25 +8,10 @@ d := 673;
 C1:=QuadraticTwist(C,d);
 J1:=Jacobian(C1); // this has rank 2
 
-a,b,_:=AutomorphismGroup(C1);
+G,b,_:=AutomorphismGroup(C1);
 
-for phi in a do
-    if Order(phi) gt 1 then 
-        Cquot, mymap := CurveQuotient(AutomorphismGroup(C1,[b(phi)]));
-        conicModel,_ := Conic(Cquot);
-        print "ans for quotient by", phi, " is", IsLocallySoluble(conicModel);
-    end if;
-end for;
 
-allOrder3Auts := [];
-
-for x in a do
-    if Order(x) eq 3 then
-        Append(~allOrder3Auts,x);
-    end if;
-end for;
-
-anOrder3Aut := allOrder3Auts[1];
+anOrder3Aut := [g : g in G | Order(g) eq 3][1];
 assert Order(anOrder3Aut) eq 3;
 
 Cquot, mymap := CurveQuotient(AutomorphismGroup(C1,[b(anOrder3Aut)]));
@@ -38,16 +23,17 @@ aRatPt := somePts[1];
 deg3Divisor:=Pullback(mymap,Place(aRatPt));
 assert Degree(deg3Divisor) eq 3;
 
-a,b,_,_,_ := MordellWeilGroupGenus2(J1);
+a,b, flag1, flag2 := MordellWeilGroupGenus2(J1);
+assert flag1 and flag2;
 
 bas := [J1!(b(a.1)), J1!(b(a.2))];
 
 f1,_ := HyperellipticPolynomials(C1);
 deg3 := 1/6*(-673*x^2 + 673*x);
 Attach("MWSieve-new.m");
-SetVerbose("MWSieve", 1); SetVerbose("GroupInfo", 1); // see what happens...
+//SetVerbose("MWSieve", 1); SetVerbose("GroupInfo", 1); // see what happens...
 
-HasPointMWSieve(J1, bas, deg3);
+HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);
 
 /*
 
