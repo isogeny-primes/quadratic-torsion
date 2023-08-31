@@ -1,11 +1,6 @@
-Last login: Fri Aug 25 00:31:54 on ttys008
-
-The default interactive shell is now zsh.
-To update your account to use zsh, please run `chsh -s /bin/zsh`.
-For more details, please visit https://support.apple.com/kb/HT208050.
 Maartens-MacBook-Pro:~ mderickx$ magma
-Magma V2.26-10    Fri Aug 25 2023 00:40:07 on Maartens-MacBook-Pro [Seed =
-294824367]
+Magma V2.26-10    Thu Aug 31 2023 22:58:54 on Maartens-MacBook-Pro [Seed =
+360812124]
 
 +-------------------------------------------------------------------+
 |       This copy of Magma has been made available through a        |
@@ -187,4 +182,21 @@ for> end for;
 9881 ]
 > print(unsolved);
 [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ]
+>
+> rank_le_2 := [];
+> rank_unknown := [];
+> for d in unsolved do
+for>   C:=HyperellipticCurve(d*f);
+for>   J := Jacobian(C);
+for>   b1, b2 := RankBounds(J);
+for>   if b2 eq 2 then
+for|if>     Append(~rank_le_2, d);
+for|if>   else
+for|if>     Append(~rank_unknown, d);
+for|if>   end if;
+for> end for;
+> print(rank_le_2);
+[ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ]
+> print(rank_unknown);
+[]
 >

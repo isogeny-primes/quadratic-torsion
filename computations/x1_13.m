@@ -37,3 +37,18 @@ for d in nonempty_selmer do
 end for;
 print(extra_point_ds);
 print(unsolved);
+
+rank_le_2 := [];
+rank_unknown := [];
+for d in unsolved do
+  C:=HyperellipticCurve(d*f);
+  J := Jacobian(C);
+  b1, b2 := RankBounds(J);
+  if b2 eq 2 then
+    Append(~rank_le_2, d);
+  else
+    Append(~rank_unknown, d);
+  end if;
+end for;
+print(rank_le_2);
+print(rank_unknown);
