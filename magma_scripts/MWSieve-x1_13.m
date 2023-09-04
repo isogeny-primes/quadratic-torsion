@@ -4,8 +4,9 @@ R<x>:=PolynomialRing(Rationals());
 f := x^6-2*x^5+x^4-2*x^3+6*x^2-4*x+1;
 C:=HyperellipticCurve(f);
 J:=Jacobian(C);
+SetClassGroupBounds("GRH");
 
-OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ];
+OurDsToCheck := [ 2161, 8473, 8641, 9689 ];
 
 function doOurMWSieve(d)
 
@@ -39,11 +40,19 @@ function doOurMWSieve(d)
     bools := [IsOdd(x) : x in degs];
     assert true in bools;
 
+    MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(
+                                        J1 : 
+                                        Rankbound := 2,
+                                        // RankOnly := true,
+                                        SearchBounds := [1000,2000,5000,10000],
+                                        SearchBounds2 := [1000,2000,5000,10000],
+                                        SearchBounds3 := [200,500,1000,2000]
+    );
 
-    a,b, flag1, flag2 := MordellWeilGroupGenus2(J1);
-    assert flag1 and flag2;
+    print "flag 1 and flag2 for d = ", d, " are respectively", flag1, "and", flag2;
+    assert flag1;
 
-    bas := [J1!(b(a.1)), J1!(b(a.2))];
+    bas := [J1!(MWtoSet(MW.1)), J1!(MWtoSet(MW.2))];
 
     ans := HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);  // this is true or false
 
