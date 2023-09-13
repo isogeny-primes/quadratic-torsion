@@ -180,6 +180,6 @@ end for;
 
 print(Seqset(failed_list));
 print(success_list);
-print(extra_points);
 print(failed_info);
 print(skip);
+print([N : N -> info in extra_points]);
