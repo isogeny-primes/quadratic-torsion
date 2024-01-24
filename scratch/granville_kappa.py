@@ -48,6 +48,6 @@ for p in bad_primes:
     bad_prime_contribution *= term
 
 
-fudged_denominator = 2  # this is one of 1,2,3,4,6,8,12, here i just chose the one that seems to fit the graph best
+fudged_denominator = 2  # this should be #Aut_Q(C)/2
 finalans = (euclidean_contribution/fudged_denominator) * good_prime_contribution * bad_prime_contribution 
 print(finalans)
