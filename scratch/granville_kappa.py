@@ -18,7 +18,7 @@ def omega(f,r):
             output += 1
     return output
 
-def omega_prime(p,k):
+def omega_prime(f, p, k):
     assert f.leading_coefficient() == 1
     return p^(k-1) * (p - 1) * omega(f,p^k)
 
@@ -41,7 +41,7 @@ SERIES_TERMS = 9  # making this too large kills the next computation
 bad_prime_contribution = 1
 for p in bad_primes:
 
-    terms_to_sum = [ (omega_prime(p,i*m)/RR(p)^(2*i*m*(1 - 1/N))) for i in range(1,SERIES_TERMS + 1) ]
+    terms_to_sum = [ (omega_prime(f,p,i*m)/RR(p)^(2*i*m*(1 - 1/N))) for i in range(1,SERIES_TERMS + 1) ]
     print(RR(terms_to_sum[-1]))
     term = sum(terms_to_sum)
     term = 1 + (1 - (1/RR(p)^(2*m/N)))*term
