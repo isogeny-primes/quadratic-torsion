@@ -18,7 +18,7 @@ NUM_GOOD_PRIMES = 5000
 
 # for the bad primes, how many terms to take in the series. Making this 
 # too large kills the speed massively.
-SERIES_TERMS = 7
+SERIES_TERMS = 5
 
 # the constants N and m are fixed by Granville as follows
 N = 6
@@ -61,11 +61,6 @@ def kappa_f_prime(f, V_f_prime, A_f_Q):
         p = RR(p0)
         term = 1 + omega(f,p0)*(p-1)*(p^(2*m/N) - 1) / (p* (p^m - p^(2*m/N)))
         good_prime_contribution *= term
-
-    # euclidean_contribution = 6.132666484981952  # see euclidean_contribution.ipynb
-
-    # 3.9325551449299807 is the one for X1(13)
-    # 3.517982630376745 is the one for X1(18)
 
     bad_prime_contribution = 1
     for p in bad_primes:

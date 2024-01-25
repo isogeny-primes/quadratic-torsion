@@ -18,9 +18,6 @@ function createHktoA(AtoHk, expvecs, factorbase)
   return HktoA;
 end function;
 
-
-
-
 function EllipticChabauty(C, g, hk, HktoA)
   assert IsMonic(g);
   assert BaseRing(C) eq QQ;

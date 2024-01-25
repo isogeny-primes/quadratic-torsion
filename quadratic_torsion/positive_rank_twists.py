@@ -33,10 +33,39 @@ def positive_rank_twists_in_range(G, start, stop):
     """
     positive_rank = []
     for d in range(start, stop):
-        if d == 0 or not is_squarefree(d):
+        if d == 0 or d == 1 or not is_squarefree(d):
             continue
 
         if not is_rank_of_twist_zero(G, d):
             positive_rank.append(d)
 
     return positive_rank
+
+
+def do_section_2_computation():
+
+    G_11 = positive_rank_twists_in_range(Gamma1(11),-10000, 10000)
+    G_14 = positive_rank_twists_in_range(Gamma1(14),-10000, 10000)
+    G_15 = positive_rank_twists_in_range(Gamma1(15),-10000, 10000)
+    G_2_10 = positive_rank_twists_in_range(Gamma0(20),-10000, 10000)
+    G_2_12 = positive_rank_twists_in_range(Gamma0(24),-10000, 10000)
+
+    with open('genus_one_lists/2_12_list.txt', 'w') as f:
+        for line in G_2_12:
+            f.write(f"{line}\n")
+
+    with open('genus_one_lists/2_10_list.txt', 'w') as f:
+        for line in G_2_10:
+            f.write(f"{line}\n")
+
+    with open('genus_one_lists/11_list.txt', 'w') as f:
+        for line in G_11:
+            f.write(f"{line}\n")
+
+    with open('genus_one_lists/14_list.txt', 'w') as f:
+        for line in G_14:
+            f.write(f"{line}\n")
+
+    with open('genus_one_lists/15_list.txt', 'w') as f:
+        for line in G_15:
+            f.write(f"{line}\n")

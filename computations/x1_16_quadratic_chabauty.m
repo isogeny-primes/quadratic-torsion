@@ -6,7 +6,7 @@ f2 := x^2+1;
 f3 := x^2 - 2*x - 1;
 f := -f1*f2*f3;
 
-d := 10;
+d := -815;
 
 x1_16 := HyperellipticCurve(f);
 

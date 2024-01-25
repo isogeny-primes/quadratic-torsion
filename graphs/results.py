@@ -15,6 +15,7 @@ def points_to_plot(d_list):
     for x,f in my_d_list:
         i += f
         output.append((x,i))
+        # output.append((x,i / float(x)**(1.0/3.0)))
     return [(0,0)]+output
 
 fig, ax = plt.subplots(1,2,figsize=(12, 8))
@@ -36,9 +37,13 @@ points_to_plot_13 = points_to_plot(G_13)
 points_to_plot_18 = points_to_plot(G_18)
 points_to_plot_16 = points_to_plot(G_16)
 
+# KAPPA_13 = 1.65  # 2.535 times too big
+# KAPPA_18 = 1.50  # 5000, 7  # 3.75 times too big
+# KAPPA_16 = 12.4  # 20000, 9  # 5 times too big
+
 KAPPA_13 = 0.65
-KAPPA_18 = 0.4
-KAPPA_16 = 12.3490592865640
+KAPPA_18 = 0.4  
+KAPPA_16 = 2.5
 
 x = np.linspace(0,10000,1000)
 
@@ -58,8 +63,8 @@ plt.plot(*zip(*points_to_plot_13), 'r-', label="N=13")
 plt.plot(*zip(*points_to_plot_18), 'or')
 plt.plot(*zip(*points_to_plot_18), 'b-', label="N=18")
 
-plt.plot(x, y_13, 'g-', label="conjectural")
-plt.plot(x, y_18, 'g-')
+plt.plot(x, y_13, 'g-', label="fitted-13")
+plt.plot(x, y_18, 'm-', label="fitted-18")
 plt.legend(loc="upper left")
 
 ax = plt.subplot(1, 2, 2)
@@ -70,7 +75,7 @@ ax.set_ylabel('T_B(16)')
 plt.plot(*zip(*points_to_plot_16), 'or')
 plt.plot(*zip(*points_to_plot_16), '-', color="orange", label="N=16")
 
-plt.plot(x, y_16, 'g-', label="conjectural")
+plt.plot(x, y_16, 'g-', label="fitted-16")
 plt.legend(loc="lower right")
 
-plt.savefig('granville_distribution.png', dpi=400)
+plt.savefig('granville_distribution_fitted.png', dpi=400)

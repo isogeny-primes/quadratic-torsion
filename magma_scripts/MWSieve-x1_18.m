@@ -6,7 +6,7 @@ C:=HyperellipticCurve(f);
 J:=Jacobian(C);
 SetClassGroupBounds("GRH");
 
-OurDsToCheck := [  681, 1329, 1761, 2841, 2913, 3769, 4729]; // 5281, 6217, 7057, 7321, 9969 ];
+OurDsToCheck := [  681, 1329, 1761, 2841, 2913, 3769, 4729, 5281, 6217, 7057, 7321, 9969 ];
 
 function doOurMWSieve(d)
 
@@ -48,13 +48,17 @@ function doOurMWSieve(d)
                                         J1 : 
                                         Rankbound := 2,
                                         // RankOnly := true,
-                                        SearchBounds := [1000,2000,5000,10000],
-                                        SearchBounds2 := [1000,2000,5000,10000],
-                                        SearchBounds3 := [200,500,1000,2000]
+                                        SearchBounds := [1000,2000,5000,10000, 50000],
+                                        SearchBounds2 := [1000,2000,5000,10000, 50000],
+                                        SearchBounds3 := [200,500,1000,2000, 10000],
+                                        MaxBound := 50000
     );
 
     print "flag 1 and flag2 for d = ", d, " are respectively", flag1, "and", flag2;
-    assert flag1;
+    
+    if not flag1 then
+        return "MW computation failed";
+    end if;
 
     bas := [J1!(MWtoSet(MW.1)), J1!(MWtoSet(MW.2))];
 
@@ -62,8 +66,6 @@ function doOurMWSieve(d)
 
     return ans;
 end function;
-
-// this fails at 2841, flag1 is false
 
 for d in OurDsToCheck do
     print "answer for ", d, " is ", doOurMWSieve(d);
