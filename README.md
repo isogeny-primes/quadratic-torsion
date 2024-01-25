@@ -1,2 +1,2 @@
 # quadratic-torsion
-Code to compute the torsion subgroups that occur over a fixed quadratic field.
+Code to compute the torsion subgroups that occur over a fixed quadratic field. This accompanies the paper *Torsion subgroups of elliptic curves over quadratic fields and a conjecture of Granville*. 
