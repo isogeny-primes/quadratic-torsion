@@ -1,3 +1,7 @@
+// This is a skunkworks file for attempting quadratic chabauty over number fields on
+// X1(16). It was stopped because the code below shows that the rank of the Neron-Severi
+// group was 1, which is a nonstarter for QC. We keep the file here for completeness.
+
 QQ := Rationals();
 Qx<x> := PolynomialRing(QQ);
 

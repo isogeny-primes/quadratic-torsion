@@ -43,7 +43,10 @@ def positive_rank_twists_in_range(G, start, stop):
 
 
 def do_section_2_computation():
-
+    """
+    This is the script we ran to generate the lists in the 
+    `genus_one_lists` directory. It is related to Section 2 of the paper.
+    """
     G_11 = positive_rank_twists_in_range(Gamma1(11),-10000, 10000)
     G_14 = positive_rank_twists_in_range(Gamma1(14),-10000, 10000)
     G_15 = positive_rank_twists_in_range(Gamma1(15),-10000, 10000)
