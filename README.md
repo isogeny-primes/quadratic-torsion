@@ -6,4 +6,4 @@ The paper itself explains what parts of this repo are used where. Here we give a
 
 ## computations
 
-This contains the meat of our code. Computing positive rank twists is done in the ipython file `positive_rank_twists.ipynb`.
+This contains the meat of our code. Computing positive rank twists is done in the ipython file `positive_rank_twists.ipynb`. The code for curves $$X_1(13)$$
