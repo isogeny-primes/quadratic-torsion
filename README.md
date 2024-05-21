@@ -6,11 +6,11 @@ The paper itself explains what parts of this repo are used where. Here we give a
 
 ## computations
 
-This contains the meat of our code. Computing positive rank twists is done in the ipython file `positive_rank_twists.ipynb`. The code for curves $X_1(13)$ and $X_1(18)$ are found in `x1_13.m` (respectively, `x1_18.m`). The file `x1_16_chabauty.m` is the main file for running code related to $X_1(16)$. The abc triples are computed in `x1_16_abc_triples.m`. 
+This contains the meat of our code. Computing positive rank twists is done in the ipython file `positive_rank_twists.ipynb`. The code for curves $X_1(13)$ and $X_1(18)$ are found in `x1_13.m` (respectively, `x1_18.m`); this is relevant to Section 3. The file `x1_16_chabauty.m` is the main file for running code related to $X_1(16)$ relevant for Section 4. The abc triples are computed in `x1_16_abc_triples.m`, relevant for Section 5.
 
 ## genus_one_lists
 
-Contains text files for which quadratic fields the five genus 1 torsion subgroups arise.
+Contains text files for which quadratic fields the five genus 1 torsion subgroups arise. Relevant to Section 2 of the paper.
 
 ## granville_constants
 
@@ -22,11 +22,11 @@ Contains the graphs - as well as the code to produce them - shown in Section 5.
 
 ## magma_scripts
 
-Contains the code for running the Mordell-Weil sieve on $X_1(13)$ and $X_1(18)$.
+Contains the code for running the Mordell-Weil sieve on $X_1(13)$ and $X_1(18)$, used in Section 4.
 
 ## quadratic_torsion
 
-Contains the code to compute positive rank twists of the modular curves we consider, via the twisted winding element method. This is imported into other files when needed.
+Contains the code to compute positive rank twists of the modular curves we consider, via the twisted winding element method. This is imported into other files when needed, and is used throughout.
 
 ## Project layout
 
