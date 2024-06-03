@@ -12,14 +12,37 @@ f := x^6-2*x^5+x^4-2*x^3+6*x^2-4*x+1;
 C:=HyperellipticCurve(f);
 J:=Jacobian(C);
 
-// Make the code run faster
-SetClassGroupBounds("GRH");
-
-// Get the list of ds
+// The list of ds that we haven't solved with other methods.
 OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ];
 
+// We know the analytic rank is positive for all these modular curves.
+// We verify that the algebraic rank is at most 2 for all these modular curves
+// Since then later for the Mordell-Weil sieving to return the correct answer
+// it suffices to find the saturation of two independent generators.
+rank_le_2 := [];
+rank_unknown := [];
+for d in unsolved do
+  C:=HyperellipticCurve(d*f);
+  J := Jacobian(C);
+  b1, b2 := RankBounds(J);
+  if b2 eq 2 then
+    Append(~rank_le_2, d);
+  else
+    Append(~rank_unknown, d);
+  end if;
+end for;
+print(rank_le_2);
+print(rank_unknown);
+assert #rank_unknown eq 0;
+
+// Make the code run faster
+// We can now safely use GRH since the only place GRH for better class group bounds is
+// used is in proving rank upper bounds in the MordellWeilGroupGenus2 function.
+
+SetClassGroupBounds("GRH");
+
 // Define the function that does the MW sieve
-function doOurMWSieve(d)
+function MWSieve(d)
 
     // Define the twist
     C1:=QuadraticTwist(C,d);
@@ -93,5 +116,5 @@ end function;
 // Run it for the d we need to check
 
 for d in OurDsToCheck do
-    print "answer for ", d, " is ", doOurMWSieve(d);
+    print "answer for ", d, " is ", MWSieve(d);
 end for;

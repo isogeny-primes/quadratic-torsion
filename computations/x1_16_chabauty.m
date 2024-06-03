@@ -15,8 +15,10 @@ function Zip(a, b)
   return [<a[i],b[i]> : i in [1..n]];
 end function;
 
-// This helper function helps us represent elements of the Two selmer set of the curve
-// Essentially it inverts the `AtoHk` map output by the TwoCoverDescent function
+// Magma's TwoCoverDescent function returns a function AtoHk that maps elements from
+// some algebra A to the fake 2-Selmer set Hk. This function returns the inverse of this
+// map. Elements in the algebra A can be used to construct the two-cover of the
+// corresponding element in the fake 2-Selmer set.
 function createHktoA(AtoHk, expvecs, factorbase)
   A := Domain(AtoHk);
   A2 := Parent(factorbase[1]);
@@ -26,8 +28,25 @@ function createHktoA(AtoHk, expvecs, factorbase)
   return HktoA;
 end function;
 
-// This is the main calling function. It is inspired by the example shown in
-// https://magma.maths.usyd.edu.au/magma/handbook/text/1566#18073
+// This function carries out the elliptic curve chabauty algorithm explained in Section
+// 4.2 of the paper. It is inspired by the example shown in:
+//   https://magma.maths.usyd.edu.au/magma/handbook/text/1566#18074
+// If C is a hyper elliptic curve given by y^2=f(x) then g should be a factor of degree
+// 3 or 4 of f. The factor g is allowed to be defined over a field extension.
+// The element hk should be an element of the fake 2 selmer group. And corresponds to
+// a two cover D -> C . D will map to the genus 1 curve gamma*y^2=g(x) for some
+// twisting factor gamma. This function applies elliptic curve chabauty to find all
+// points on C(Q) that come from a point on D(Q). The return value is a 4 tuple:
+//
+//    (success, gamma, points, message)
+//
+//  - success: a boolean that when true guarantees that all points on C(Q) coming from
+//    D(Q) are contained in the set of points output by this function
+//  - gamma: is the twisting factor corresponding to g and hk ensuring that D has a map to
+//    gamma*y^2=g(x)
+//  - points: a set of points on C
+//  - message: an message that indicates why we failed to do elliptic curve chabauty in
+//    case of failure
 function EllipticChabauty(C, g, hk, HktoA)
   // Basic setup is as follows
   assert IsMonic(g);
@@ -43,7 +62,7 @@ function EllipticChabauty(C, g, hk, HktoA)
   assert Evaluate(f, L.1) eq 0;
   AtoL := hom< A -> L | L.1>;
 
-  // For some gamma, we have that a 2-cover hk covers the elliptic curve E:y^2=gamma * g.
+  // For some gamma, we have that a 2-cover hk covers the genus 1 curve E:y^2=gamma * g.
   // The following obtains this gamma.
 
   gamma := Norm(AtoL(HktoA(hk)));
@@ -62,12 +81,16 @@ function EllipticChabauty(C, g, hk, HktoA)
   EtoP1:=map<E->P1|[E.1,E.3]>;
   iselliptic, E1raw, EtoE1raw, E1rawtoE := IsEllipticCurve(E);
 
-  // If it is not elliptic, we need to find a point at infinity
+  // If magma didn't find an elliptic curve model, we manually search for a rational
+  // point to function as the point at infinity
   if not iselliptic then
     print "finding points";
     time Epoints := Points(E : Bound:=100);
     
-    // If we can't find a point, we return
+    // If we can't find a point, we report failure. Theoretically we could still try
+    // to prove that E is a pointless genus 1 curve. However this will be hard since
+    // the two descent we did earlier implies that E is coverd by an everywhere
+    // locally solvable curve. And hence there are no local obstructions.
     if #Epoints eq 0 then
       success := false;
       return success, gamma_g, points, "point search failed";
@@ -120,7 +143,7 @@ end function;
 
 // The following is now running the above. We define the curve X1(16), but we also need
 // the various factors over splitting fields, since that's how we construct the auxiliary
-// elliptic curves
+// elliptic curves for the elliptic curve chabauty method.
 
 f1 := x;
 f2 := x^2+1;
@@ -148,8 +171,6 @@ skip := {-1271, -119, 51};
 
 // positive rank under BSD in range [-10000,10000]
 todo_list := [-9995, -9959, -9910, -9906, -9899, -9887, -9886, -9830, -9754, -9743, -9690, -9618, -9590, -9530, -9487, -9458, -9389, -9366, -9355, -9290, -9289, -9282, -9271, -9231, -9215, -9210, -9051, -9030, -9022, -8989, -8943, -8927, -8879, -8786, -8690, -8687, -8651, -8617, -8610, -8538, -8527, -8502, -8479, -8421, -8366, -8365, -8346, -8319, -8259, -8255, -8251, -8186, -8143, -8126, -8098, -8058, -8043, -8030, -8022, -7990, -7973, -7946, -7919, -7887, -7871, -7854, -7826, -7797, -7727, -7711, -7710, -7635, -7622, -7615, -7567, -7505, -7503, -7462, -7455, -7431, -7421, -7359, -7279, -7197, -7161, -7034, -7006, -6970, -6969, -6942, -6790, -6774, -6767, -6758, -6711, -6639, -6630, -6603, -6594, -6503, -6466, -6465, -6347, -6305, -6251, -6239, -6169, -6162, -6149, -6110, -6095, -6063, -6046, -6041, -6031, -6010, -6005, -5951, -5834, -5830, -5829, -5754, -5734, -5678, -5593, -5570, -5567, -5565, -5554, -5546, -5519, -5469, -5406, -5385, -5334, -5330, -5295, -5293, -5289, -5253, -5177, -5138, -5135, -5106, -5090, -5071, -5061, -5019, -4991, -4970, -4911, -4862, -4847, -4826, -4774, -4773, -4754, -4745, -4703, -4674, -4607, -4559, -4539, -4479, -4454, -4447, -4415, -4395, -4386, -4371, -4346, -4286, -4271, -4254, -4233, -4227, -4207, -4191, -4186, -4159, -4134, -4074, -4029, -4011, -3994, -3966, -3927, -3926, -3903, -3901, -3805, -3794, -3766, -3755, -3730, -3723, -3705, -3689, -3657, -3638, -3615, -3614, -3570, -3553, -3503, -3439, -3433, -3410, -3346, -3255, -3237, -3215, -3206, -3199, -3165, -3162, -3135, -3126, -3111, -3106, -3066, -3055, -3003, -3002, -2993, -2990, -2938, -2921, -2905, -2886, -2874, -2847, -2845, -2815, -2810, -2806, -2765, -2706, -2681, -2679, -2665, -2607, -2603, -2534, -2482, -2447, -2415, -2405, -2399, -2378, -2329, -2319, -2302, -2297, -2290, -2285, -2255, -2183, -2159, -2138, -2135, -2121, -2090, -2078, -2071, -2030, -2010, -1999, -1995, -1959, -1906, -1887, -1871, -1869, -1823, -1810, -1786, -1778, -1749, -1739, -1730, -1695, -1673, -1662, -1635, -1626, -1581, -1565, -1515, -1505, -1435, -1390, -1343, -1338, -1330, -1326, -1279, -1271, -1247, -1190, -1189, -1186, -1165, -1022, -1007, -1001, -959, -958, -939, -935, -926, -881, -871, -815, -799, -795, -779, -767, -761, -751, -734, -713, -697, -671, -623, -615, -590, -518, -511, -510, -479, -474, -455, -447, -446, -434, -431, -429, -415, -395, -365, -346, -345, -341, -319, -314, -313, -303, -290, -282, -271, -254, -246, -239, -230, -205, -190, -159, -143, -127, -122, -119, -105, -102, -79, -74, -47, -41, -26, -15, 1, 10, 15, 41, 51, 70, 79, 93, 94, 105, 141, 143, 159, 182, 187, 205, 217, 222, 246, 274, 303, 310, 313, 319, 345, 366, 370, 391, 394, 395, 406, 409, 411, 415, 435, 442, 510, 535, 542, 546, 598, 609, 634, 671, 679, 697, 751, 761, 782, 794, 809, 889, 939, 949, 959, 969, 1001, 1007, 1039, 1081, 1086, 1105, 1113, 1155, 1186, 1195, 1293, 1302, 1310, 1326, 1334, 1337, 1378, 1426, 1435, 1526, 1533, 1547, 1554, 1561, 1570, 1581, 1626, 1657, 1695, 1705, 1735, 1738, 1759, 1767, 1785, 1786, 1830, 1869, 1897, 1906, 2026, 2067, 2110, 2121, 2193, 2198, 2301, 2329, 2345, 2370, 2395, 2399, 2410, 2415, 2422, 2427, 2454, 2463, 2482, 2526, 2569, 2626, 2665, 2681, 2686, 2706, 2710, 2713, 2730, 2767, 2773, 2794, 2905, 2953, 2985, 2986, 2990, 3003, 3031, 3055, 3085, 3094, 3122, 3129, 3145, 3215, 3289, 3354, 3374, 3570, 3585, 3615, 3657, 3689, 3705, 3791, 3805, 3895, 3946, 3967, 3970, 4010, 4029, 4079, 4123, 4278, 4310, 4345, 4381, 4393, 4395, 4441, 4498, 4505, 4506, 4522, 4633, 4745, 4754, 4758, 4771, 4795, 4810, 4921, 4943, 4945, 5066, 5071, 5111, 5122, 5135, 5167, 5185, 5257, 5293, 5330, 5334, 5385, 5395, 5430, 5565, 5593, 5649, 5681, 5754, 5842, 5865, 5890, 5945, 5974, 5995, 6031, 6073, 6157, 6162, 6233, 6235, 6239, 6271, 6355, 6365, 6486, 6559, 6602, 6666, 6683, 6774, 6902, 6953, 6969, 7003, 7006, 7049, 7106, 7161, 7189, 7193, 7210, 7221, 7261, 7339, 7341, 7378, 7379, 7455, 7519, 7561, 7567, 7574, 7582, 7609, 7674, 7705, 7711, 7733, 7786, 7871, 7878, 7922, 7954, 8030, 8062, 8074, 8130, 8131, 8155, 8169, 8189, 8246, 8255, 8286, 8295, 8365, 8395, 8459, 8479, 8565, 8569, 8570, 8574, 8601, 8645, 8690, 8857, 8905, 8906, 8961, 9006, 9034, 9042, 9051, 9062, 9110, 9118, 9194, 9214, 9322, 9334, 9366, 9398, 9553, 9646, 9685, 9709, 9833, 9871, 9961, 9982];
-// failed cases
-//todo_list := [-8259, -8022, -7973, -7615, -7462, -7161, -7006, -6711, -6503, -6095, -6031, -6005, -5106, -4911, -4847, -4773, -4674, -4371, -4191, -4074, -3927, -3503, -3199, -2405, -1810, -1749, -815, 205, 217, 969, 1105, 1186, 1378, 3215, 3374, 3585, 3705, 3946, 4633, 4745, 5257, 5385, 5565, 5890, 7006, 7210, 7733, 8459, 8479, 8569, 8570, 9709, 9961 ];
 
 // Finally the main loop
 for N in todo_list do
@@ -178,7 +199,7 @@ for N in todo_list do
     success := false;
     fE_info := [* *];
     
-    // we have 8 elliptic curves to work with
+    // we have 8 galois conjugacy classes of genus 1 curves to work with
     for fE in [* f1*f2, f1*f3, f2*f3, f2a*f3, f3a*f2, x*f2a*f3, x*f3a*f2, x*f2b*f3b *] do
       print "======== doing f =====", fE;
       success, gamma_g, new_points, message := EllipticChabauty(C, fE, hk, HktoA);
