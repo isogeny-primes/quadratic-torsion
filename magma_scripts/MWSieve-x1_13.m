@@ -21,9 +21,9 @@ OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ];
 // it suffices to find the saturation of two independent generators.
 rank_le_2 := [];
 rank_unknown := [];
-for d in unsolved do
-  C:=HyperellipticCurve(d*f);
-  J := Jacobian(C);
+for d in OurDsToCheck do
+  C1:=QuadraticTwist(C,d);
+  J := Jacobian(C1);
   b1, b2 := RankBounds(J);
   if b2 eq 2 then
     Append(~rank_le_2, d);
@@ -75,7 +75,10 @@ function MWSieve(d)
     assert Degree(deg3Divisor) eq 3; // Woo hoo!
 
     deg3DivisorSupport := Support(deg3Divisor)[1]; // throw away multiplicity
-    deg3PseudoPoly := RepresentativePoint(deg3DivisorSupport)[2];  // this is actually an element of a number field, we need the poly, so go through some hassle to get it
+    deg3PseudoPoly := RepresentativePoint(deg3DivisorSupport)[2];
+
+    // this is actually an element of a number field, we need the poly,
+    // so go through some hassle to get it
     K := Parent(deg3PseudoPoly);
 
     phi := hom<K -> R | [R.1]>;
@@ -84,10 +87,12 @@ function MWSieve(d)
     fd3 := Factorization(f1 - deg3^2);
     degs := [Degree(a[1]) : a in fd3];
     bools := [IsOdd(x) : x in degs];
-    assert true in bools;
+    assert true in bools;  // so it is a valid input for the Bruin-Stoll Mordell-Weil sieve
 
     // That was computing the deg3 divisor. Now we proceed with getting generators of the MW group
 
+
+    print "doing MW computation for d = ", d;
     MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(
                                         J1 : 
                                         Rankbound := 2,
@@ -97,24 +102,52 @@ function MWSieve(d)
                                         MaxBound := 50000
     );
 
-    // Check the computation actually worked, and if not, return a string
+
+    // Check the computation actually worked, and if not, return that we failed
 
     print "flag 1 and flag2 for d = ", d, " are respectively", flag1, "and", flag2;
-    if not flag1 then
-        return "MW computation failed";
+    if not (flag1 and flag2)  then
+        success := false;
+        points := [];
+        return success, points, "MW computation failed";
     end if;
+
+    // the correctness of the code below asummes that the MW group is isomorphic to
+    // Z x Z, so we assert that this is indeed the case.
+    assert Invariants(MW) eq [0,0];
 
     // The desired basis
     bas := [J1!(MWtoSet(MW.1)), J1!(MWtoSet(MW.2))];
 
     // Here we do the MW sieve
-    ans := HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);  // this is true or false
+    has_point, point := HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);  // this is true or false
 
-    return ans;
+    success := true;
+    if has_point then
+        return success, [point], "found a point";
+    else
+        return success, [], "the curve has no points";
+    end if;
 end function;
 
 // Run it for the d we need to check
-
+unsolved := [];
+has_point := [];
+has_no_point := [];
 for d in OurDsToCheck do
-    print "answer for ", d, " is ", MWSieve(d);
+    success, points, message := MWSieve(d);
+    print "answer for ", d, " is ", message;
+    if success then
+       if #points eq 0 then
+         Append(~has_no_point, d);
+       else
+         Append(~has_point, d);
+       end if;
+    else
+       Append(~unsolved, d);
+    end if;
 end for;
+
+print unsolved;
+print has_point;
+print has_no_point;
