@@ -1,4 +1,6 @@
-from sage.all import ModularSymbols, kronecker_character, is_squarefree
+import json
+
+from sage.all import ModularSymbols, kronecker_character, is_squarefree, Gamma0, Gamma1
 
 
 def is_rank_of_twist_zero(G, d):
@@ -42,30 +44,49 @@ def positive_rank_twists_in_range(G, start, stop):
     return positive_rank
 
 
-def do_section_2_computation():
+def write_results(G, start, stop, location):
+    """
+    Writes the results of positive_rank_twists_in_range(G, start, stop)
+    to a file.
 
-    G_11 = positive_rank_twists_in_range(Gamma1(11),-10000, 10000)
-    G_14 = positive_rank_twists_in_range(Gamma1(14),-10000, 10000)
-    G_15 = positive_rank_twists_in_range(Gamma1(15),-10000, 10000)
-    G_2_10 = positive_rank_twists_in_range(Gamma0(20),-10000, 10000)
-    G_2_12 = positive_rank_twists_in_range(Gamma0(24),-10000, 10000)
+    :param G: A congruence subgroup intermediate between Gamma0 and Gamma1
+    :param start: an integer
+    :param stop: an integer
+    :param location: where to write the results to.
+    """
+    result = positive_rank_twists_in_range(G, start, stop)
+    with open(location, "w") as f:
+        f.write(json.dumps(result, indent=2))
 
-    with open('genus_one_lists/2_12_list.txt', 'w') as f:
-        for line in G_2_12:
-            f.write(f"{line}\n")
 
-    with open('genus_one_lists/2_10_list.txt', 'w') as f:
-        for line in G_2_10:
-            f.write(f"{line}\n")
+def main(start, stop, directory = "../genus_one_lists/"):
+    """
+    Do all the analytic rank computations for the paper, for modular curves
+    of genus one curves this is Section 2 of the paper.
 
-    with open('genus_one_lists/11_list.txt', 'w') as f:
-        for line in G_11:
-            f.write(f"{line}\n")
+    """
 
-    with open('genus_one_lists/14_list.txt', 'w') as f:
-        for line in G_14:
-            f.write(f"{line}\n")
 
-    with open('genus_one_lists/15_list.txt', 'w') as f:
-        for line in G_15:
-            f.write(f"{line}\n")
+
+    for G, location in [
+        (Gamma1(11), f"{directory}/11_list.json"),
+        (Gamma1(13), f"{directory}/13_list.json"),
+        (Gamma1(14), f"{directory}/14_list.json"),
+        (Gamma1(15), f"{directory}/15_list.json"),
+        (Gamma1(16), f"{directory}/16_list.json"),
+        (Gamma1(18), f"{directory}/18_list.json"),
+        (Gamma0(20), f"{directory}/2_10_list.json"),
+        (Gamma0(24), f"{directory}/2_12_list.json"),
+    ]:
+        write_results(G, start, stop, location)
+
+
+if __name__ == "__main__":
+    """
+    In order to reproduce the computations in this file simply run
+    
+        sage positive_rank_twists.py 
+    
+    from the command line in this directory.
+    """
+    main(-10000, 10000)
