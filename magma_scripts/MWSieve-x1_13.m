@@ -120,7 +120,7 @@ function MWSieve(d)
     bas := [J1!(MWtoSet(MW.1)), J1!(MWtoSet(MW.2))];
 
     // Here we do the MW sieve
-    has_point, point := HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);  // this is true or false
+    has_point, point := HasPointMWSieve(J1, bas, deg3: testfun := func<p, v | IsOdd(v) and p gt 3>);  // has_point is true or false
 
     success := true;
     if has_point then
