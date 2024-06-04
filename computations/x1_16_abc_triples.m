@@ -50,7 +50,7 @@ h := hom< S0 -> S | x,y >;
 // Here is the numerator of the j-map expressed in x only
 h(Numerator(jC));
 
-// This will up to gcd's and a factor of 1728 be the c of the abc triple later
+// This will (up to gcd's and a factor of 1728) be the c of the abc triple later
 R<x> := PolynomialRing(Rationals());
 c := -x^48 + 24*x^46 + 492*x^44 - 13336*x^42 - 73602*x^40 + 2509320*x^38 +
     1587516*x^36 - 171403272*x^34 + 315735825*x^32 + 2624226160*x^30 -
