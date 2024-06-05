@@ -91,16 +91,25 @@ function MWSieve(d)
 
     // That was computing the deg3 divisor. Now we proceed with getting generators of the MW group
 
+    // do the mw group computation with increasing search bounds in order to speed up the computation
 
-    print "doing MW computation for d = ", d;
-    MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(
-                                        J1 : 
-                                        Rankbound := 2,
-                                        SearchBounds := [1000,2000,5000,10000, 50000],
-                                        SearchBounds2 := [1000,2000,5000,10000, 50000],
-                                        SearchBounds3 := [200,500,1000,2000, 10000],
-                                        MaxBound := 50000
-    );
+    SearchBounds := [1000,2000,5000,10000, 50000];
+    SearchBounds2 := [1000,2000,5000,10000, 50000];
+    SearchBounds3 := [200,500,1000,2000, 10000];
+
+    for i in [1..#SearchBounds] do
+
+      print "doing MW computation for d = ", d, "bound index i = ", i;
+      MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2(
+                                            J1 :
+                                            Rankbound := 2,
+                                            SearchBounds := [SearchBounds[i]],
+                                            SearchBounds2 := [SearchBounds2[i]],
+                                            SearchBounds3 := [SearchBounds3[i]],
+                                            MaxBound := SearchBounds[i]
+      );
+      if flag1 and flag2 then break; end if;
+    end for;
 
 
     // Check the computation actually worked, and if not, return that we failed
