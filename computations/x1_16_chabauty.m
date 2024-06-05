@@ -234,4 +234,4 @@ print(Seqset(failed_list));
 print(success_list);
 print(failed_info);
 print(skip);
-print([N : N -> info in extra_points]);
+print(Sort([N : N -> info in extra_points]));
