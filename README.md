@@ -10,7 +10,7 @@ This contains the meat of our code. Computing positive rank twists is done in th
 
 ## positive_rank_lists
 
-For each of the genus 1 and 2 curves this lists which twists have postive analytic rank. For the five genus 1 curves we have also verfied that these actually have postive algebraic rank as expected. One can directly deduce over which quadratic fields these five genus 1 modular curves have extra points. 
+For each of the genus 1 and 2 curves this lists which twists have postive analytic rank. For the five genus 1 curves we have also verfied that these actually have postive algebraic rank as expected. From this one can directly deduce over which quadratic fields these five genus 1 modular curves have extra points, as described in section 2 of the paper. 
 
 ## granville_constants
 
