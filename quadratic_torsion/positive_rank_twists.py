@@ -59,7 +59,7 @@ def write_results(G, start, stop, location):
         f.write(json.dumps(result, indent=2))
 
 
-def main(start, stop, directory = "../genus_one_lists/"):
+def main(start, stop, directory = "../positive_rank_lists/"):
     """
     Do all the analytic rank computations for the paper, for modular curves
     of genus one curves this is Section 2 of the paper.
