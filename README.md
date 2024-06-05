@@ -8,9 +8,9 @@ The paper itself explains what parts of this repo are used where. Here we give a
 
 This contains the meat of our code. Computing positive rank twists is done in the ipython file `positive_rank_twists.ipynb`. The code for curves $X_1(13)$ and $X_1(18)$ are found in `x1_13.m` (respectively, `x1_18.m`); this is relevant to Section 3. The file `x1_16_chabauty.m` is the main file for running code related to $X_1(16)$ relevant for Section 4. The abc triples are computed in `x1_16_abc_triples.m`, relevant for Section 5.
 
-## genus_one_lists
+## positive_rank_lists
 
-Contains text files for which quadratic fields the five genus 1 torsion subgroups arise. Relevant to Section 2 of the paper.
+For each of the genus 1 and 2 curves this lists which twists have postive analytic rank. For the five genus 1 curves we have also verfied that these actually have postive algebraic rank as expected. One can directly deduce over which quadratic fields these five genus 1 modular curves have extra points. 
 
 ## granville_constants
 
@@ -33,7 +33,7 @@ Contains the code to compute positive rank twists of the modular curves we consi
 ```
 .
 ├── computations
-├── genus_one_lists
+├── positive_rank_lists
 ├── granville_constants
 ├── graphs
 ├── magma_scripts
