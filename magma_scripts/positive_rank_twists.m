@@ -27,11 +27,36 @@ end function;
 // It returns true, 0 if all twists of E by the integers d in Dlist indeed have postive
 // algberaic rank. And returns false, d whenever there is an integer d such that E
 // twisted by d has rank 0.
-procedure VerifyPositiveRank(E, Dlist)
+function VerifyPositiveRank(E, Dlist)
     for d in Dlist do
         Ed := QuadraticTwist(E,d);
-        if Rank(Ed) eq 0 then
+        if Rank(Ed : Effort := 2) eq 0 then
           return false, d;
+        end if;
     end for;
     return true, 0;
-end procedure;
+end function;
+
+
+// This is what we run to verify that the algebraic rank of the 
+// 5 elliptic modular curves with positive analytic rank is also positive.
+// The log of running this is in logs/elliptic_rank_verifs_log.txt
+
+data := [
+  <SmallModularCurve(11), "../positive_rank_lists/11_list.json">,
+  <SmallModularCurve(14), "../positive_rank_lists/14_list.json">,
+  <SmallModularCurve(15), "../positive_rank_lists/15_list.json">,
+  <SmallModularCurve(20), "../positive_rank_lists/2_10_list.json">,
+  <SmallModularCurve(24), "../positive_rank_lists/2_12_list.json">
+];
+
+// Since class group bounds are only ever used for upper bounds,
+// and we are only interested in verifying that the rank is positive,
+// we can set the class group bounds to assume GRH.
+SetClassGroupBounds("GRH");
+
+for Eloc in data do
+  E,loc := Explode(Eloc);
+  DList := eval Read(loc);
+  print VerifyPositiveRank(E, DList);
+end for;
