@@ -2756,7 +2756,7 @@ bas is a sequence of generators of the Mordell-Weil group,
 deg3 is a polynomial b(x) such that  f(x) - b(x)^2 has a factor of odd degree.
 SmoothBound, testfun, eps and eps1 are technical parameters. If CheckSmall
 is true, the function searches for small points on the curve first.
-The first return value is true or false. If true, the second reeturn value
+The first return value is true or false. If true, the second return value
 is a rational point on the curve. Further return values have a more technical
 meaning.}
   t0 := Cputime();

@@ -24,6 +24,7 @@ SERIES_TERMS = 5
 N = 6
 m = 2
 
+# This is Granville's omega constant
 def omega(f,r):
     if is_prime(r):
         f = f.change_ring(GF(r))
@@ -34,6 +35,7 @@ def omega(f,r):
             output += 1
     return output
 
+# This is Granville's omega' (omega prime) constant
 def omega_prime(f, p, k):
     assert f.leading_coefficient() == 1
     return p^(k-1) * (p - 1) * omega(f,p^k)
@@ -73,7 +75,7 @@ def kappa_f_prime(f, V_f_prime, A_f_Q):
     finalans = (V_f_prime/A_f_Q) * good_prime_contribution * bad_prime_contribution 
     return finalans
 
-
+# Main calling function
 def main():
     f = x*(x^2+1)*(x^2+2*x-1)
     V_f_prime = 6.132666484981952
