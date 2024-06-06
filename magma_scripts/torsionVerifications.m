@@ -21,7 +21,22 @@ f := R![1, 2, 5, 10, 10, 4, 1];
 C:=HyperellipticCurve(f);
 J:=Jacobian(C);
 
-for p in PrimesInInterval(5,30) do
+for p in PrimesInInterval(5,17) do
+   print p , Invariants(ClassGroup(ChangeRing(C, GF(p^2))));
+end for;
+
+J:=Jacobian(C);
+TorsionSubgroup(J);
+
+/*
+    Here we verify Lemma 4.1
+*/
+
+f := R![1, -4, 4, 4, -12, 8];
+C:=HyperellipticCurve(f);
+J:=Jacobian(C);
+
+for p in PrimesInInterval(3,17) do
    print p , Invariants(ClassGroup(ChangeRing(C, GF(p^2))));
 end for;
 
