@@ -30,7 +30,7 @@ end function;
 function VerifyPositiveRank(E, Dlist)
     for d in Dlist do
         Ed := QuadraticTwist(E,d);
-        if Rank(Ed) eq 0 then
+        if Rank(Ed : Effort := 2) eq 0 then
           return false, d;
         end if;
     end for;
@@ -49,6 +49,11 @@ data := [
   <SmallModularCurve(20), "../positive_rank_lists/2_10_list.json">,
   <SmallModularCurve(24), "../positive_rank_lists/2_12_list.json">
 ];
+
+// Since class group bounds are only ever used for upper bounds,
+// and we are only interested in verifying that the rank is positive,
+// we can set the class group bounds to assume GRH.
+SetClassGroupBounds("GRH");
 
 for Eloc in data do
   E,loc := Explode(Eloc);
