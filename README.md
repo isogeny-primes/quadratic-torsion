@@ -10,7 +10,7 @@ folder.
 
 This directory constains a singele file [positive_rank_twists.py](python_scripts/positive_rank_twists.py). The code in
 this file uses SageMath's modular symbol methods to compute which twists of the relavant modular curves have positive
-analytic rank. The output of these computations are automatically written to the 
+analytic rank. The output of these computations are automatically written to the
 [positive_rank_lists folder](#positiveranklists). To reproduce these computations simply do:
 
 ```commandline
@@ -62,7 +62,7 @@ Mordell-Weil group. And the cases we cannot deal with are because we were unable
 fact that BSD predicts they should exist.
 
 The verification of the torsion computations of Lemma's 3.3, 3.5 and 4.1 can be found in
-[torsionVerifications.m](magma_scripts/torsionVerifications.m)
+[torsionVerifications.m](magma_scripts/torsionVerifications.m). These computations should be finished within a minute.
 
 ### X_1(16)
 
@@ -74,7 +74,7 @@ This computation should finish in 1 to 2 hours.
 Additionally, Granville's work on points on twists of genus 2 curves predicts that one should be able to produce
 abc-triples form the j-invariants of small points on quadratic twists of $X_1(16)$. The code to compute these triples
 can be found in [x1_16_abc_triples.m](magma_scripts/x1_16_abc_triples.m) and the list of triples themselves can be found
-in [x1_16_abc_triples_list.txt](logs/x1_16_abc_triples_list.txt).
+in [x1_16_abc_triples_list.txt](logs/x1_16_abc_triples_list.txt). These computations should be finished within a minute.
 
 ## granville
 
