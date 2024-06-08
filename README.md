@@ -51,7 +51,7 @@ For the 5 genus 1 modular curves, we only need to verify that the curves that ha
 positive algebraic rank as predicted by the BSD conjecture. The code for this is in
 [positive_rank_twists.m](magma_scripts/positive_rank_twists.m).
 
-### X_1(13) and X_1(18)
+### $X_1(13)$ and $X_1(18)$
 
 For these two modular curves we first do a two descent and a point search. These code for these computations can be
 found in [x1_13.m](magma_scripts/x1_13.m) and [x1_18.m](magma_scripts/x1_18.m). These computations should finish in
@@ -64,7 +64,7 @@ fact that BSD predicts they should exist.
 The verification of the torsion computations of Lemma's 3.3, 3.5 and 4.1 can be found in
 [torsionVerifications.m](magma_scripts/torsionVerifications.m). These computations should be finished within a minute.
 
-### X_1(16)
+### $X_1(16)$
 
 For $X_1(16)$ we do a point search which can be found in [x1_16_point_search.m](magma_scripts/x1_16_point_search.m).
 This computation should be done in under a minute. We also combine two cover descent together with elliptic curve
