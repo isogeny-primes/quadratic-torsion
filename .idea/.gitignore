@@ -1,8 +1,0 @@
-# Default ignored files
-/shelf/
-/workspace.xml
-
-# For now we ignore everything
-*
-# Except gitignore
-!.gitignore
