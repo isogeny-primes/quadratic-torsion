@@ -1,0 +1,243 @@
+Magma V2.28-3     Wed Jun  5 2024 17:45:45 on euler    [Seed = 3974759128]
+Type ? for help.  Type <Ctrl>-D to quit.
+> /*
+>     This carries out the MW sieve on the `unsolved` list of twists of X1(13)
+> */
+>
+> // Load the MW sieve implementation of Bruin and Stoll
+> Attach("MWSieve-new.m");
+> //SetVerbose("MWSieve", 1); SetVerbose("GroupInfo", 1); // see what happens...
+>
+> // Define the curve and Jacobian
+> R<x>:=PolynomialRing(Rationals());
+> f := x^6-2*x^5+x^4-2*x^3+6*x^2-4*x+1;
+> C:=HyperellipticCurve(f);
+> J:=Jacobian(C);
+>
+> // The list of ds that we haven't solved with other methods.
+> OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ];
+>
+> // We know the analytic rank is positive for all these modular curves.
+> // We verify that the algebraic rank is at most 2 for all these modular curves
+> // Since then later for the Mordell-Weil sieving to return the correct answer
+> // it suffices to find the saturation of two independent generators.
+> rank_le_2 := [];
+> rank_unknown := [];
+> for d in OurDsToCheck do
+for>   C1:=QuadraticTwist(C,d);
+for>   J := Jacobian(C1);
+for>   b1, b2 := RankBounds(J);
+for>   if b2 eq 2 then
+for|if>     Append(~rank_le_2, d);
+for|if>   else
+for|if>     Append(~rank_unknown, d);
+for|if>   end if;
+for> end for;
+> print(rank_le_2);
+[ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ]
+> print(rank_unknown);
+[]
+> assert #rank_unknown eq 0;
+>
+> // Make the code run faster
+> // We can now safely use GRH since the only place GRH for better class group\
+ bounds is
+> // used is in proving rank upper bounds in the MordellWeilGroupGenus2 functi\
+on.
+>
+> SetClassGroupBounds("GRH");
+>
+> // Define the function that does the MW sieve
+> function MWSieve(d)
+function>
+function>     // Define the twist
+function>     C1:=QuadraticTwist(C,d);
+function>     f1,_ := HyperellipticPolynomials(C1);
+function>     J1:=Jacobian(C1); // this has rank 2
+function>
+function>     // As explained in the paper, the implementaiton requires a
+function>     // degree 3 divisor. Obtaining this is done as follows
+function>
+function>     // First compute the automorphism group
+function>
+function>     G,b,_:=AutomorphismGroup(C1);
+function>
+function>     // Next find an automorphism of order 3
+function>
+function>     anOrder3Aut := [g : g in G | Order(g) eq 3][1];
+function>     assert Order(anOrder3Aut) eq 3;
+function>
+function>     // Next compute the quotient curve
+function>
+function>     Cquot, mymap := CurveQuotient(AutomorphismGroup(C1,[b(anOrder3Au\
+t)]));
+function>
+function>     // Find a rational point on the quotient curve
+function>
+function>     somePts := Points(Cquot : Bound := 1000);
+function>     aRatPt := somePts[1];
+function>
+function>     // Pull back the rational point to a divisor on the curve
+function>     deg3Divisor:=Pullback(mymap,Place(aRatPt));
+function>     assert Degree(deg3Divisor) eq 3; // Woo hoo!
+function>
+function>     deg3DivisorSupport := Support(deg3Divisor)[1]; // throw away mul\
+tiplicity
+function>     deg3PseudoPoly := RepresentativePoint(deg3DivisorSupport)[2];
+function>
+function>     // this is actually an element of a number field, we need the po\
+ly,
+function>     // so go through some hassle to get it
+function>     K := Parent(deg3PseudoPoly);
+function>
+function>     phi := hom<K -> R | [R.1]>;
+function>     deg3 := phi(deg3PseudoPoly);  // this is now a valid poly which \
+we will now sanity check as follows
+function>
+function>     fd3 := Factorization(f1 - deg3^2);
+function>     degs := [Degree(a[1]) : a in fd3];
+function>     bools := [IsOdd(x) : x in degs];
+function>     assert true in bools;  // so it is a valid input for the Bruin-S\
+toll Mordell-Weil sieve
+function>
+function>     // That was computing the deg3 divisor. Now we proceed with gett\
+ing generators of the MW group
+function>
+function>     // do the mw group computation with increasing search bounds in \
+order to speed up the computation
+function>
+function>     SearchBounds := [1000,2000,5000,10000, 50000];
+function>     SearchBounds2 := [1000,2000,5000,10000, 50000];
+function>     SearchBounds3 := [200,500,1000,2000, 10000];
+function>
+function>     for i in [1..#SearchBounds] do
+function|for>
+function|for>       print "doing MW computation for d = ", d, "bound index i =\
+ ", i;
+function|for>       MW, MWtoSet, flag1, flag2, bound := MordellWeilGroupGenus2\
+(
+function|for>                                             J1 :
+function|for>                                             Rankbound := 2,
+function|for>                                             SearchBounds := [Sea\
+rchBounds[i]],
+function|for>                                             SearchBounds2 := [Se\
+archBounds2[i]],
+function|for>                                             SearchBounds3 := [Se\
+archBounds3[i]],
+function|for>                                             MaxBound := SearchBo\
+unds[i]
+function|for>       );
+function|for>       if flag1 and flag2 then break; end if;
+function|for>     end for;
+function>
+function>
+function>     // Check the computation actually worked, and if not, return tha\
+t we failed
+function>
+function>     print "flag 1 and flag2 for d = ", d, " are respectively", flag1\
+, "and", flag2;
+function>     if not (flag1 and flag2)  then
+function|if>         success := false;
+function|if>         points := [];
+function|if>         return success, points, "MW computation failed";
+function|if>     end if;
+function>
+function>     // the correctness of the code below asummes that the MW group i\
+s isomorphic to
+function>     // Z x Z, so we assert that this is indeed the case.
+function>     assert Invariants(MW) eq [0,0];
+function>
+function>     // The desired basis
+function>     bas := [J1!(MWtoSet(MW.1)), J1!(MWtoSet(MW.2))];
+function>
+function>     // Here we do the MW sieve
+function>     has_point, point := HasPointMWSieve(J1, bas, deg3: testfun := fu\
+nc<p, v | IsOdd(v) and p gt 3>);  // has_point is true or false
+function>
+function>     success := true;
+function>     if has_point then
+function|if>         return success, [point], "found a point";
+function|if>     else
+function|if>         return success, [], "the curve has no points";
+function|if>     end if;
+function> end function;
+>
+> // Run it for the d we need to check
+> unsolved := [];
+> has_point := [];
+> has_no_point := [];
+> for d in OurDsToCheck do
+for>     success, points, message := MWSieve(d);
+for>     print "answer for ", d, " is ", message;
+for>     if success then
+for|if>        if #points eq 0 then
+for|if|if>          Append(~has_no_point, d);
+for|if|if>        else
+for|if|if>          Append(~has_point, d);
+for|if|if>        end if;
+for|if>     else
+for|if>        Append(~unsolved, d);
+for|if>     end if;
+for> end for;
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  673 bound index i =  1
+flag 1 and flag2 for d =  673  are respectively true and true
+answer for  673  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  1609 bound index i =  1
+flag 1 and flag2 for d =  1609  are respectively true and true
+answer for  1609  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  1921 bound index i =  1
+flag 1 and flag2 for d =  1921  are respectively true and true
+answer for  1921  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ -1, 1, -1, 0 ]) >
+doing MW computation for d =  2089 bound index i =  1
+flag 1 and flag2 for d =  2089  are respectively true and true
+answer for  2089  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  2161 bound index i =  1
+doing MW computation for d =  2161 bound index i =  2
+flag 1 and flag2 for d =  2161  are respectively true and true
+answer for  2161  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ -1, 1, -1, 0 ]) >
+doing MW computation for d =  8473 bound index i =  1
+doing MW computation for d =  8473 bound index i =  2
+doing MW computation for d =  8473 bound index i =  3
+flag 1 and flag2 for d =  8473  are respectively true and true
+answer for  8473  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  8641 bound index i =  1
+doing MW computation for d =  8641 bound index i =  2
+doing MW computation for d =  8641 bound index i =  3
+doing MW computation for d =  8641 bound index i =  4
+doing MW computation for d =  8641 bound index i =  5
+flag 1 and flag2 for d =  8641  are respectively true and true
+answer for  8641  is  the curve has no points
+MatrixGroup<2, RationalField() |
+    Matrix(RationalField(), 2, 2, [ 0, -1, 1, -1 ]) >
+doing MW computation for d =  9689 bound index i =  1
+doing MW computation for d =  9689 bound index i =  2
+doing MW computation for d =  9689 bound index i =  3
+doing MW computation for d =  9689 bound index i =  4
+doing MW computation for d =  9689 bound index i =  5
+flag 1 and flag2 for d =  9689  are respectively false and false
+answer for  9689  is  MW computation failed
+>
+> print unsolved;
+[ 9689 ]
+> print has_point;
+[]
+> print has_no_point;
+[ 673, 1609, 1921, 2089, 2161, 8473, 8641 ]
+>
+>
+
+Total time: 312649.739 [373209.051] seconds, Total memory usage: 229.16MB

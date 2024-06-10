@@ -13,7 +13,11 @@ C:=HyperellipticCurve(f);
 J:=Jacobian(C);
 
 // The list of ds that we haven't solved with other methods.
-OurDsToCheck := [  681, 1329, 1761, 2841, 2913, 3769, 4729, 5281, 6217, 7057, 7321, 9969 ];
+OurDsToCheck := [ 681, 1329, 1761, 2841, 2913, 3769, 4729, 5281, 6217, 7057, 7321, 9969 ];
+// Uncomment the following line to speed up the verification. This skips the cases 2841, 4729 and 9969, that we know
+// will fail anyway.
+// OurDsToCheck := [ 681, 1329, 1761, 2913, 3769, 5281, 6217, 7057, 7321 ];
+
 
 // We know the analytic rank is positive for all these modular curves.
 // We verify that the algebraic rank is at most 2 for all these modular curves

@@ -14,6 +14,8 @@ J:=Jacobian(C);
 
 // The list of ds that we haven't solved with other methods.
 OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641, 9689 ];
+// Uncomment the following line to speed up the verification. This skips the case 9689 that we know will fail anyway.
+// OurDsToCheck := [ 673, 1609, 1921, 2089, 2161, 8473, 8641 ];
 
 // We know the analytic rank is positive for all these modular curves.
 // We verify that the algebraic rank is at most 2 for all these modular curves
