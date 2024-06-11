@@ -28,13 +28,21 @@ end function;
 // algberaic rank. And returns false, d whenever there is an integer d such that E
 // twisted by d has rank 0.
 function VerifyPositiveRank(E, Dlist)
+    not_found_list := [];
+    error_list := [];
     for d in Dlist do
         Ed := QuadraticTwist(E,d);
-        if Rank(Ed : Effort := 2) eq 0 then
-          return false, d;
+        try
+            rank := Rank(Ed : Effort := 2);
+        catch e
+            Append(~error_list, <d, e`Object>);
+            continue;
+        end try;
+        if rank eq 0 then
+            Append(~not_found_list, d);
         end if;
     end for;
-    return true, 0;
+    return not_found_list, error_list;
 end function;
 
 
