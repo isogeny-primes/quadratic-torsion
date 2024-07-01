@@ -36,7 +36,7 @@ This contains the meat of our code. Most of the computations here rely on the re
 need to consider the twist of positive algebraic rank. Since algebraic rank > 0 implies analytic rank > 0 we
 restrict all computations to the twists in the [positive_rank_lists folder](#positiveranklists).
 
-To reproduce the computations in the file `example.m` this directore either do
+To reproduce the computations in the file `example.m` in this directory either do
 
 ```commandline
 cd magma_scripts
@@ -48,8 +48,9 @@ or copy paste the contents of `example.m` into an interactive Magma session.
 ### The genus 1 modular curves
 
 For the 5 genus 1 modular curves, we only need to verify that the curves that have positive analytic rank also have
-positive algebraic rank as predicted by the BSD conjecture. The code for this is in
-[positive_rank_twists.m](magma_scripts/positive_rank_twists.m).
+positive algebraic rank as predicted by the BSD conjecture. 
+
+We initially attempted this in Magma, using the script [positive_rank_twists.m](magma_scripts/positive_rank_twists.m). This script was not able to verify all of the ranks; see that file for the issues encountered. We then subsequently re-did the verification in Sage, using the script [verify_positive_ranks_genus_1.py](python_scripts/verify_positive_ranks_genus_1.py).
 
 ### $X_1(13)$ and $X_1(18)$
 

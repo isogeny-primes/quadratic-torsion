@@ -5,7 +5,7 @@ from sage.all import ModularSymbols, kronecker_character, is_squarefree, Gamma0,
 
 def is_rank_of_twist_zero(G, d):
     """
-    Let J(G) denote the jabobian of the modular curve X(G).
+    Let J(G) denote the jacobian of the modular curve X(G).
     This function decides wether the quadratic of the jacobian J(G) by d has
     analytic rank 0 or not.
 
@@ -23,7 +23,7 @@ def is_rank_of_twist_zero(G, d):
 
 def positive_rank_twists_in_range(G, start, stop):
     """
-    Let J(G) denote the jabobian of the modular curve X(G).
+    Let J(G) denote the jacobian of the modular curve X(G).
     This function computes the list of squarefree integers d between start and stop
     such that twist of J(G) by d has positive analytic rank.
 
@@ -65,8 +65,6 @@ def main(start, stop, directory = "../positive_rank_lists/"):
     of genus one curves this is Section 2 of the paper.
 
     """
-
-
 
     for G, location in [
         (Gamma1(11), f"{directory}/11_list.json"),

@@ -6,7 +6,7 @@
 function IsZeroRankofTwist(G,d)
 // This is the Magma implementation of the sage function is_rank_of_twist_zero(G, d) in
 //   quadratic_torsion/positive_rank_twists.py
-// Since it is about 8 times slower than the sage code, we do this compution in sage.
+// Since it is about 8 times slower than the sage code, we do this computation in sage.
 // And this function is not actually used. However we still include it in case someone
 // wants to verify out results using magma.
 // it uses modular symbols to compute wether the analytic rank is 0 or not
@@ -24,8 +24,8 @@ end function;
 
 // For each of the elliptic curves that have positive analytic rank
 // we verify that they also have positive algebraic rank.
-// It returns true, 0 if all twists of E by the integers d in Dlist indeed have postive
-// algberaic rank. And returns false, d whenever there is an integer d such that E
+// It returns true, 0 if all twists of E by the integers d in Dlist indeed have positive
+// algebraic rank. And returns false, d whenever there is an integer d such that E
 // twisted by d has rank 0.
 function VerifyPositiveRank(E, Dlist)
     for d in Dlist do
