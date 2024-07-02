@@ -16,7 +16,7 @@
 import json
 import logging
 import argparse
-from sage.all import Gamma1
+from sage.all import Gamma1, Gamma0
 
 def verify_rank_with_other_methods(E, d_vals):
     rank_failures = []
@@ -40,7 +40,7 @@ def main(directory="../positive_rank_lists/"):
     
     success = True
     for G, location in [
-        (Gamma1(11), f"{directory}/11_list.json")
+        (Gamma1(11), f"{directory}/11_list.json"),
         (Gamma1(14), f"{directory}/14_list.json"),
         (Gamma1(15), f"{directory}/15_list.json"),
         (Gamma0(20), f"{directory}/2_10_list.json"),
@@ -50,7 +50,8 @@ def main(directory="../positive_rank_lists/"):
         E = G.modular_abelian_variety().elliptic_curve()
         with open(location, "r") as f:
             d_vals = json.loads(f.read())
-        logging.info(f"Verifying ranks for {G} with d_vals: {d_vals}")
+        logging.info(f"Verifying ranks for {G}")
+        logging.debug(f"Twisting parameters: {d_vals}")
         rank_failures, sage_failures = verify_rank_with_other_methods(E, d_vals)
         if rank_failures:
             logging.info(f"Rank failures for {G}: {rank_failures}")
